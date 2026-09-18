@@ -202,7 +202,8 @@ export class App {
     const handle = showModal(this.root, content, {
       onClose: () => {
         this.pauseOpen = false;
-        if (this.session === session) session.setPaused(false);
+        // The session may have been rebuilt (language change) while paused: resume whichever is current.
+        this.session?.setPaused(false);
       },
     });
     content.appendChild(el('h2', { text: t('pause.title') }));
