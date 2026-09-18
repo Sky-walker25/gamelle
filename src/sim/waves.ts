@@ -6,7 +6,7 @@ import type { MapDef, WaveDef, WaveGroup } from './types';
 export const THREAT: Record<string, number> = {
   legionary: 6,
   conscript: 3,
-  hussar: 6,
+  hussar: 8,
   knight: 22,
   hoplite: 18,
   berserker: 16,
@@ -115,7 +115,13 @@ function pickFlavor(rng: Rng, pool: string[], n: number): Flavor {
   return 'mixed';
 }
 
-function candidatePool(pool: string[], flavor: Flavor, groupIndex: number, n: number, used: Set<string>): string[] {
+function candidatePool(
+  pool: string[],
+  flavor: Flavor,
+  groupIndex: number,
+  n: number,
+  used: Set<string>,
+): string[] {
   let list = pool;
   if (flavor === 'air' && groupIndex < 2) {
     list = pool.filter((id) => enemyDef(id).flying);
@@ -125,9 +131,10 @@ function candidatePool(pool: string[], flavor: Flavor, groupIndex: number, n: nu
     list = pool.filter((id) => (THREAT[id] ?? 0) >= 18);
   }
   if (list.length === 0) list = pool;
-  // The first group of early waves is always plain infantry to keep openings gentle.
-  if (groupIndex === 0 && n < 6) {
-    const cheap = list.filter((id) => (THREAT[id] ?? 0) <= 10);
+  // Early waves open with the cheapest troops available so players can learn the map.
+  if (n < 4 || (groupIndex === 0 && n < 7)) {
+    const minThreat = Math.min(...list.map((id) => THREAT[id] ?? 99));
+    const cheap = list.filter((id) => (THREAT[id] ?? 99) <= minThreat + (n < 4 ? 0 : 4));
     if (cheap.length > 0) list = cheap;
   }
   const unused = list.filter((id) => !used.has(id));

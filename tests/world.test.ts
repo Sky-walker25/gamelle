@@ -8,7 +8,7 @@ describe('World economy and building', () => {
   it('starts with map gold and lives scaled by difficulty', () => {
     const w = makeWorld({ difficulty: 'hard' });
     expect(w.gold).toBe(Math.round(320 * 0.85));
-    expect(w.lives).toBe(12);
+    expect(w.lives).toBe(15);
   });
 
   it('builds a tower on buildable terrain and charges gold', () => {
@@ -303,5 +303,16 @@ describe('Persistence', () => {
     expect(restored.enemies.length).toBe(w.enemies.length);
     expect(restored.stats.kills).toBe(w.stats.kills);
     expect(restored.rng.getState()).toBe(w.rng.getState());
+  });
+});
+
+describe('Open map placement with enemies in flight', () => {
+  it('does not report a blocked placement because of enemies still off-screen', () => {
+    const w = makeWorld({ map: MAP_BY_ID['verdun']! });
+    w.gold = 100000;
+    w.callNextWave();
+    run(w, 1.2); // first enemies have spawned just outside the map edge
+    expect(w.enemies.length).toBeGreaterThan(0);
+    expect(w.canBuild('archers', 9, 3)).toBeNull();
   });
 });

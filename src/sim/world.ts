@@ -1,8 +1,22 @@
 import { Emitter } from '@/core/events';
 import type { Vec2 } from '@/core/math';
-import { angleBetween, dist, distSq, pointAlongPolyline, polylineLength, rotateTowards, TAU } from '@/core/math';
+import {
+  angleBetween,
+  dist,
+  distSq,
+  pointAlongPolyline,
+  polylineLength,
+  rotateTowards,
+  TAU,
+} from '@/core/math';
 import { Rng } from '@/core/rng';
-import { DIFFICULTIES, EARLY_CALL_GOLD_PER_SECOND, INTEREST_CAP, INTEREST_RATE, WAVE_COUNTDOWN } from '@/data/difficulty';
+import {
+  DIFFICULTIES,
+  EARLY_CALL_GOLD_PER_SECOND,
+  INTEREST_CAP,
+  INTEREST_RATE,
+  WAVE_COUNTDOWN,
+} from '@/data/difficulty';
 import { enemyDef } from '@/data/enemies';
 import { SELL_RATIO, TOWER_BY_ID, towerLevelDef } from '@/data/towers';
 import { computeDamage, waveHpMultiplier } from './damage';
@@ -37,7 +51,15 @@ export interface WorldConfig {
 }
 
 export interface WorldEvents {
-  shoot: { towerId: number; kind: ProjectileKind | 'cone' | 'tracer'; x: number; y: number; angle: number; tx: number; ty: number };
+  shoot: {
+    towerId: number;
+    kind: ProjectileKind | 'cone' | 'tracer';
+    x: number;
+    y: number;
+    angle: number;
+    tx: number;
+    ty: number;
+  };
   hit: { x: number; y: number; damage: number; type: DamageType; crit: boolean; enemyId: number };
   explosion: { x: number; y: number; radius: number; type: DamageType };
   enemyDied: { enemy: Enemy; killerTowerId: number; bounty: number };
@@ -80,7 +102,7 @@ export class World {
   readonly grid: Grid;
   readonly rng: Rng;
   readonly difficulty: DifficultyDef;
-  readonly mode: GameMode;
+  mode: GameMode;
   readonly events = new Emitter<WorldEvents>();
   readonly unlockedTowers: Set<string>;
   readonly seed: number;
@@ -164,14 +186,27 @@ export class World {
   }
 
   get canCallWave(): boolean {
-    return !this.isOver && this.hasMoreWaves && (this.phase === 'idle' || this.phase === 'countdown' || this.phase === 'active');
+    return (
+      !this.isOver &&
+      this.hasMoreWaves &&
+      (this.phase === 'idle' || this.phase === 'countdown' || this.phase === 'active')
+    );
   }
 
   /** Gold the player would receive by calling the next wave right now. */
   get earlyCallBonus(): number {
     if (this.phase === 'countdown') return Math.round(this.countdown * EARLY_CALL_GOLD_PER_SECOND);
-    if (this.phase === 'active' && this.hasMoreWaves) return Math.round(this.wave(this.waveIndex + 1).reward * 0.15);
+    if (this.phase === 'active' && this.hasMoreWaves)
+      return Math.round(this.wave(this.waveIndex + 1).reward * 0.15);
     return 0;
+  }
+
+  /** After a campaign victory, keep playing with endless scaling. */
+  continueEndless(): void {
+    if (this.phase !== 'won') return;
+    this.mode = 'endless';
+    this.phase = 'countdown';
+    this.countdown = WAVE_COUNTDOWN;
   }
 
   callNextWave(): boolean {
@@ -260,13 +295,28 @@ export class World {
       const filtered = candidates.filter((p) => p.id === entry.path || p.group === entry.path);
       if (filtered.length > 0) list = filtered;
     }
-    const path = this.rng.weighted(list, list.map((p) => p.weight)) as ResolvedPath;
+    const path = this.rng.weighted(
+      list,
+      list.map((p) => p.weight),
+    ) as ResolvedPath;
     this.spawnEnemy(entry.enemy, entry.wave, path.points, path.id, 0, 0);
   }
 
-  spawnEnemy(defId: string, wave: number, points: Vec2[], pathId: string, travelled: number, generation: number): Enemy {
+  spawnEnemy(
+    defId: string,
+    wave: number,
+    points: Vec2[],
+    pathId: string,
+    travelled: number,
+    generation: number,
+  ): Enemy {
     const def = enemyDef(defId);
-    const hpMult = waveHpMultiplier(Math.max(1, wave), this.def.hpScale, this.difficulty.hpMult, this.def.waveCount);
+    const hpMult = waveHpMultiplier(
+      Math.max(1, wave),
+      this.def.hpScale,
+      this.difficulty.hpMult,
+      this.def.waveCount,
+    );
     const maxHp = Math.round(def.hp * hpMult);
     const lane = this.rng.range(-1, 1) * (def.flying ? 22 : 13);
     const enemy: Enemy = {
@@ -577,7 +627,8 @@ export class World {
       if (e.flying ? !lvl.targetsAir : !lvl.targetsGround) continue;
       if (distSq(t.x, t.y, e.x, e.y) > r2) continue;
       this.applyStatus(e, lvl.status, t.id);
-      if (stats.damage > 0) this.damageEnemy(e, stats.damage * dt, lvl.damageType, lvl.armorPierce ?? 0, t.id, false, 1, true);
+      if (stats.damage > 0)
+        this.damageEnemy(e, stats.damage * dt, lvl.damageType, lvl.armorPierce ?? 0, t.id, false, 1, true);
     }
   }
 
@@ -693,14 +744,34 @@ export class World {
     return !!lvl.crit && this.rng.chance(lvl.crit.chance);
   }
 
-  private fireProjectile(t: Tower, lvl: TowerLevelDef, stats: TowerStats, target: Enemy, kind: ProjectileKind): Projectile {
+  private fireProjectile(
+    t: Tower,
+    lvl: TowerLevelDef,
+    stats: TowerStats,
+    target: Enemy,
+    kind: ProjectileKind,
+  ): Projectile {
     const p = this.makeProjectile(t, lvl, stats, target, kind);
     this.projectiles.push(p);
-    this.events.emit('shoot', { towerId: t.id, kind, x: t.x, y: t.y, angle: t.angle, tx: target.x, ty: target.y });
+    this.events.emit('shoot', {
+      towerId: t.id,
+      kind,
+      x: t.x,
+      y: t.y,
+      angle: t.angle,
+      tx: target.x,
+      ty: target.y,
+    });
     return p;
   }
 
-  private makeProjectile(t: Tower, lvl: TowerLevelDef, stats: TowerStats, target: Enemy, kind: ProjectileKind): Projectile {
+  private makeProjectile(
+    t: Tower,
+    lvl: TowerLevelDef,
+    stats: TowerStats,
+    target: Enemy,
+    kind: ProjectileKind,
+  ): Projectile {
     const muzzle = 18;
     return {
       id: this.nextId++,
@@ -731,11 +802,27 @@ export class World {
 
   private fireHitscan(t: Tower, lvl: TowerLevelDef, stats: TowerStats, target: Enemy): void {
     const crit = this.rollCrit(lvl);
-    this.events.emit('shoot', { towerId: t.id, kind: 'tracer', x: t.x, y: t.y, angle: t.angle, tx: target.x, ty: target.y });
+    this.events.emit('shoot', {
+      towerId: t.id,
+      kind: 'tracer',
+      x: t.x,
+      y: t.y,
+      angle: t.angle,
+      tx: target.x,
+      ty: target.y,
+    });
     if (lvl.splash) {
       this.areaDamage(target.x, target.y, lvl.splash, stats.damage, lvl, t.id, crit);
     } else {
-      this.damageEnemy(target, stats.damage, lvl.damageType, lvl.armorPierce ?? 0, t.id, crit, lvl.bonusVsAir ?? 1);
+      this.damageEnemy(
+        target,
+        stats.damage,
+        lvl.damageType,
+        lvl.armorPierce ?? 0,
+        t.id,
+        crit,
+        lvl.bonusVsAir ?? 1,
+      );
       this.applyStatus(target, lvl.status, t.id);
     }
   }
@@ -746,8 +833,12 @@ export class World {
     const flightTime = Math.max(0.35, d / speed);
     // Lead the target along its path.
     const def = enemyDef(target.defId);
-    const lead = pointAlongPolyline(target.path, target.travelled + target.baseSpeed * target.status.slowFactor * flightTime * 0.9);
-    const kind: ProjectileKind = t.defId === 'fire' ? 'drum' : t.defId === 'siege' && t.level < 3 ? 'ball' : 'shell';
+    const lead = pointAlongPolyline(
+      target.path,
+      target.travelled + target.baseSpeed * target.status.slowFactor * flightTime * 0.9,
+    );
+    const kind: ProjectileKind =
+      t.defId === 'fire' ? 'drum' : t.defId === 'siege' && t.level < 3 ? 'ball' : 'shell';
     const p = this.makeProjectile(t, lvl, stats, target, kind);
     p.targetX = lead.x - Math.sin(lead.angle) * target.lane;
     p.targetY = lead.y + Math.cos(lead.angle) * target.lane;
@@ -757,20 +848,45 @@ export class World {
     p.y = t.y;
     void def;
     this.projectiles.push(p);
-    this.events.emit('shoot', { towerId: t.id, kind, x: t.x, y: t.y, angle: t.angle, tx: p.targetX, ty: p.targetY });
+    this.events.emit('shoot', {
+      towerId: t.id,
+      kind,
+      x: t.x,
+      y: t.y,
+      angle: t.angle,
+      tx: p.targetX,
+      ty: p.targetY,
+    });
   }
 
   private fireCone(t: Tower, lvl: TowerLevelDef, stats: TowerStats, target: Enemy, list: Enemy[]): void {
     const half = ((lvl.coneAngle ?? 60) * Math.PI) / 360;
     const aim = angleBetween(t.x, t.y, target.x, target.y);
     t.angle = aim;
-    this.events.emit('shoot', { towerId: t.id, kind: 'cone', x: t.x, y: t.y, angle: aim, tx: target.x, ty: target.y });
+    this.events.emit('shoot', {
+      towerId: t.id,
+      kind: 'cone',
+      x: t.x,
+      y: t.y,
+      angle: aim,
+      tx: target.x,
+      ty: target.y,
+    });
     for (const e of list) {
       const a = angleBetween(t.x, t.y, e.x, e.y);
       let delta = Math.abs(a - aim) % TAU;
       if (delta > Math.PI) delta = TAU - delta;
       if (delta > half) continue;
-      this.damageEnemy(e, stats.damage, lvl.damageType, lvl.armorPierce ?? 0, t.id, false, lvl.bonusVsAir ?? 1, true);
+      this.damageEnemy(
+        e,
+        stats.damage,
+        lvl.damageType,
+        lvl.armorPierce ?? 0,
+        t.id,
+        false,
+        lvl.bonusVsAir ?? 1,
+        true,
+      );
       this.applyStatus(e, lvl.status, t.id);
     }
   }
@@ -788,10 +904,26 @@ export class World {
       this.projectiles.push(p);
     }
     t.salvoPhase = (t.salvoPhase + 1) % Math.max(1, sorted.length);
-    this.events.emit('shoot', { towerId: t.id, kind: 'rocket', x: t.x, y: t.y, angle: t.angle, tx: target.x, ty: target.y });
+    this.events.emit('shoot', {
+      towerId: t.id,
+      kind: 'rocket',
+      x: t.x,
+      y: t.y,
+      angle: t.angle,
+      tx: target.x,
+      ty: target.y,
+    });
   }
 
-  areaDamage(x: number, y: number, radius: number, damage: number, lvl: TowerLevelDef, ownerId: number, crit: boolean): void {
+  areaDamage(
+    x: number,
+    y: number,
+    radius: number,
+    damage: number,
+    lvl: TowerLevelDef,
+    ownerId: number,
+    crit: boolean,
+  ): void {
     this.events.emit('explosion', { x, y, radius, type: lvl.damageType });
     for (const e of this.enemies) {
       if (e.dead) continue;
@@ -799,7 +931,15 @@ export class World {
       const d = dist(x, y, e.x, e.y) - e.radius;
       if (d > radius) continue;
       const falloff = d <= radius * 0.5 ? 1 : 1 - ((d - radius * 0.5) / (radius * 0.5)) * 0.4;
-      this.damageEnemy(e, damage * falloff, lvl.damageType, lvl.armorPierce ?? 0, ownerId, crit, lvl.bonusVsAir ?? 1);
+      this.damageEnemy(
+        e,
+        damage * falloff,
+        lvl.damageType,
+        lvl.armorPierce ?? 0,
+        ownerId,
+        crit,
+        lvl.bonusVsAir ?? 1,
+      );
       this.applyStatus(e, lvl.status, ownerId);
     }
   }
@@ -931,6 +1071,8 @@ export class World {
     for (const e of this.enemies) {
       if (e.dead || e.flying) continue;
       const [c, r] = worldToTile(e.x, e.y);
+      // Enemies still walking in from off-screen are not on the grid yet.
+      if (!this.grid.inBounds(c, r) || !this.grid.isWalkable(c, r)) continue;
       if (this.grid.flowDistance(c, r) < 0) {
         trapped = true;
         break;
@@ -1163,7 +1305,7 @@ export class World {
       const enemy: Enemy = { ...e, status: { ...e.status }, path: e.path };
       if (enemy.path.length === 0) {
         const path = [...world.grid.paths, ...world.grid.airPaths].find((p) => p.id === enemy.pathId);
-        enemy.path = path ? path.points : world.grid.paths[0]?.points ?? [];
+        enemy.path = path ? path.points : (world.grid.paths[0]?.points ?? []);
       }
       enemy.pathLength = polylineLength(enemy.path);
       world.enemies.push(enemy);

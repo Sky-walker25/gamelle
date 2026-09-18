@@ -33,9 +33,14 @@ export function computeDamage(input: DamageInput): number {
 }
 
 /** Enemy hit points multiplier for a given wave number (1-based). */
-export function waveHpMultiplier(wave: number, mapScale: number, difficultyMult: number, waveCount: number): number {
+export function waveHpMultiplier(
+  wave: number,
+  mapScale: number,
+  difficultyMult: number,
+  waveCount: number,
+): number {
   const capped = Math.min(wave, waveCount);
   let mult = 1 + 0.03 * (capped - 1);
-  if (wave > waveCount) mult *= Math.pow(1.05, wave - waveCount);
+  if (wave > waveCount) mult *= Math.pow(1.075, wave - waveCount);
   return mult * mapScale * difficultyMult;
 }

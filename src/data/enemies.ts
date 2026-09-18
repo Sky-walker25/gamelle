@@ -102,7 +102,10 @@ export const ENEMIES: EnemyDef[] = [
     livesDamage: 2,
     radius: 13,
     berserk: { maxSpeedMult: 2.2 },
-    description: { fr: 'Accélère à mesure qu’il perd des points de vie.', en: 'Speeds up as he loses health.' },
+    description: {
+      fr: 'Accélère à mesure qu’il perd des points de vie.',
+      en: 'Speeds up as he loses health.',
+    },
     lore: {
       fr: 'Les berserkers des sagas nordiques combattent « sans cotte de mailles, enragés comme des chiens ou des loups ».',
       en: 'The berserkers of the Norse sagas fought “without mail, as mad as dogs or wolves”.',
@@ -141,7 +144,10 @@ export const ENEMIES: EnemyDef[] = [
     livesDamage: 1,
     radius: 11,
     heal: { radius: 90, hps: 9 },
-    description: { fr: 'Soigne les ennemis proches. À éliminer en priorité.', en: 'Heals nearby enemies. Kill first.' },
+    description: {
+      fr: 'Soigne les ennemis proches. À éliminer en priorité.',
+      en: 'Heals nearby enemies. Kill first.',
+    },
     lore: {
       fr: 'La première convention de Genève (1864) protège les blessés et le personnel médical marqué de la croix rouge.',
       en: 'The first Geneva Convention (1864) protected the wounded and medical staff bearing the red cross.',
@@ -217,7 +223,10 @@ export const ENEMIES: EnemyDef[] = [
     livesDamage: 5,
     radius: 22,
     spawnOnDeath: { enemy: 'legionary', count: 2 },
-    description: { fr: 'Colosse. Ses cavaliers continuent à pied à sa mort.', en: 'A colossus. Its riders fight on when it falls.' },
+    description: {
+      fr: 'Colosse. Ses cavaliers continuent à pied à sa mort.',
+      en: 'A colossus. Its riders fight on when it falls.',
+    },
     lore: {
       fr: 'Hannibal franchit les Alpes en 218 av. J.-C. avec 37 éléphants ; un seul, Surus, survit à l’hiver.',
       en: 'Hannibal crossed the Alps in 218 BC with 37 elephants; only one, Surus, survived the winter.',
@@ -235,7 +244,10 @@ export const ENEMIES: EnemyDef[] = [
     livesDamage: 4,
     radius: 18,
     resist: { fire: 1.3 },
-    description: { fr: 'Blindage épais. Le feu et les mines en viennent à bout.', en: 'Thick armour. Fire and mines get through.' },
+    description: {
+      fr: 'Blindage épais. Le feu et les mines en viennent à bout.',
+      en: 'Thick armour. Fire and mines get through.',
+    },
     lore: {
       fr: 'Le Renault FT (1917), premier char à tourelle rotative, est produit à 3 700 exemplaires ; le père de tous les chars modernes.',
       en: 'The Renault FT (1917), the first tank with a rotating turret, was built 3,700 times; the father of all modern tanks.',
@@ -247,7 +259,7 @@ export const ENEMIES: EnemyDef[] = [
     name: { fr: 'Surus', en: 'Surus' },
     era: 'antiquity',
     year: '218 av. J.-C.',
-    hp: 2600,
+    hp: 2200,
     speed: 42,
     armor: 0.25,
     reward: 250,
@@ -255,7 +267,10 @@ export const ENEMIES: EnemyDef[] = [
     radius: 26,
     boss: true,
     spawnOnDeath: { enemy: 'legionary', count: 4 },
-    description: { fr: 'Boss. L’éléphant d’Hannibal, escorté de légionnaires.', en: 'Boss. Hannibal’s elephant, escorted by legionaries.' },
+    description: {
+      fr: 'Boss. L’éléphant d’Hannibal, escorté de légionnaires.',
+      en: 'Boss. Hannibal’s elephant, escorted by legionaries.',
+    },
     lore: {
       fr: 'Surus, « le Syrien », éléphant borgne qu’Hannibal montait lui-même dans les marais de l’Arno en 217 av. J.-C.',
       en: 'Surus, “the Syrian”, the one-eyed elephant Hannibal himself rode through the Arno marshes in 217 BC.',
@@ -266,7 +281,7 @@ export const ENEMIES: EnemyDef[] = [
     name: { fr: 'Zeppelin L 30', en: 'Zeppelin L 30' },
     era: 'modern',
     year: '1916',
-    hp: 3800,
+    hp: 3200,
     speed: 32,
     armor: 0.1,
     reward: 350,
@@ -290,7 +305,7 @@ export const ENEMIES: EnemyDef[] = [
     name: { fr: 'Char Mark IV', en: 'Mark IV Tank' },
     era: 'modern',
     year: '1917',
-    hp: 6500,
+    hp: 5600,
     speed: 30,
     armor: 0.75,
     reward: 500,

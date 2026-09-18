@@ -295,9 +295,9 @@ export const MAPS: MapDef[] = [
     ],
     paths: [],
     waveCount: 30,
-    startGold: 420,
+    startGold: 480,
     startLives: 20,
-    hpScale: 1.15,
+    hpScale: 1.0,
     roster: [
       r('legionary', 1),
       r('hussar', 2),

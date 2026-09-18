@@ -126,7 +126,8 @@ export class Grid {
       points.push(tileCenter(c, r));
       if (i > 0) {
         const [pc, pr] = wps[i - 1] as [number, number];
-        if (pc !== c && pr !== r) throw new Error(`Path ${p.id}: waypoints ${i - 1} and ${i} are not aligned`);
+        if (pc !== c && pr !== r)
+          throw new Error(`Path ${p.id}: waypoints ${i - 1} and ${i} are not aligned`);
         if (carve) {
           const dc = Math.sign(c - pc);
           const dr = Math.sign(r - pr);
@@ -316,7 +317,9 @@ export class Grid {
     const out: Tile[] = [];
     const r2 = radius * radius;
     for (const t of this.tiles) {
-      const isPath = this.open ? this.isWalkable(t.col, t.row) && this.flowDistance(t.col, t.row) > 0 : t.kind === 'path';
+      const isPath = this.open
+        ? this.isWalkable(t.col, t.row) && this.flowDistance(t.col, t.row) > 0
+        : t.kind === 'path';
       if (!isPath) continue;
       const c = tileCenter(t.col, t.row);
       const dx = c.x - x;
