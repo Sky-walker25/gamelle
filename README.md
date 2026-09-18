@@ -26,6 +26,10 @@ npm run preview    # sert dist/ sur http://localhost:4173
 
 Node 20 ou plus récent est requis.
 
+- **Sans rien installer** : le fichier [`release/gamelle-defense.html`](release/gamelle-defense.html)
+  contient tout le jeu en un seul fichier. Téléchargez-le (bouton *Download raw file*
+  sur GitHub) et ouvrez-le dans votre navigateur. `npm run build:single` le régénère.
+
 ## Règles du jeu
 
 - Les ennemis suivent le chemin jusqu'à votre forteresse ; chaque ennemi qui

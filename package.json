@@ -15,7 +15,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:e2e": "playwright test",
-    "check": "npm run typecheck && npm run lint && npm run test && npm run build"
+    "check": "npm run typecheck && npm run lint && npm run test && npm run build",
+    "build:single": "BASE_PATH=./ vite build && node scripts/inline.mjs release/gamelle-defense.html"
   },
   "devDependencies": {
     "@eslint/js": "^9.30.0",
