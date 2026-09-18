@@ -1,0 +1,15 @@
+{
+  "name": "Gamelle Defense",
+  "short_name": "Gamelle",
+  "description": "Tower defense historique : trente siècles d'armes réelles, six champs de bataille.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "landscape",
+  "background_color": "#0d1016",
+  "theme_color": "#0d1016",
+  "lang": "fr",
+  "icons": [
+    { "src": "./favicon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+  ]
+}

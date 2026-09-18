@@ -23,3 +23,12 @@ declare global {
 
 // Debug and end-to-end test hook.
 window.__gamelle = { app, maps: MAPS, towers: TOWERS, enemies: ENEMIES };
+
+// Offline support in production builds only; development keeps a plain reload cycle.
+if (import.meta.env.PROD && 'serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker
+      .register(`${import.meta.env.BASE_URL}sw.js`)
+      .catch((err) => console.warn('Service worker not registered', err));
+  });
+}

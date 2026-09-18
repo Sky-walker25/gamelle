@@ -7,8 +7,9 @@ arme, chaque troupe et chaque carte correspond à quelque chose qui a existé.
 
 Le jeu est écrit en TypeScript, rendu en Canvas 2D et n'embarque **aucun
 asset externe** : les graphismes sont dessinés en vectoriel par le moteur et
-les sons sont synthétisés en Web Audio. Le build final est un site statique
-qui fonctionne hors ligne une fois chargé.
+les sons sont synthétisés en Web Audio. Le build final est un site statique,
+installable comme application (manifeste PWA) et jouable hors ligne après la
+première visite grâce à un service worker.
 
 ## Jouer
 
@@ -67,7 +68,8 @@ Node 20 ou plus récent est requis.
 | `R` | Afficher toutes les portées |
 | `Maj` + clic | Construire plusieurs tours d'affilée |
 
-Le jeu est aussi jouable au tactile.
+Le jeu est aussi jouable au tactile. Le bouton **Comment jouer** du menu
+résume ces règles dans le jeu, et l'aide contextuelle guide la première partie.
 
 ## Contenu
 

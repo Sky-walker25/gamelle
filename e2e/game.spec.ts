@@ -43,6 +43,10 @@ test.describe('Gamelle Defense', () => {
     await expect(page.getByRole('button', { name: /Campagne/ })).toBeVisible();
     await expect(page.getByRole('button', { name: /Encyclopédie/ })).toBeVisible();
     await expect(page.getByRole('button', { name: /Réglages/ })).toBeVisible();
+    await page.getByRole('button', { name: /Comment jouer/ }).click();
+    await expect(page.locator('.modal h2')).toHaveText('Comment jouer');
+    await page.keyboard.press('Escape');
+    await expect(page.locator('.modal')).toHaveCount(0);
   });
 
   test('switches language to English', async ({ page }) => {

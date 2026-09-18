@@ -367,10 +367,14 @@ export class Renderer {
     );
     ctx.imageSmoothingEnabled = true;
 
-    if (this.terrain) ctx.drawImage(this.terrain, 0, 0, world.grid.width, world.grid.height);
     ctx.strokeStyle = 'rgba(0,0,0,0.5)';
     ctx.lineWidth = 3;
     ctx.strokeRect(-1.5, -1.5, world.grid.width + 3, world.grid.height + 3);
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(0, 0, world.grid.width, world.grid.height);
+    ctx.clip();
+    if (this.terrain) ctx.drawImage(this.terrain, 0, 0, world.grid.width, world.grid.height);
     if (world.grid.open) this.drawRoutes(ctx, world);
     this.drawGridOverlay(ctx, world, view);
     this.drawTraps(ctx, world);
@@ -404,6 +408,7 @@ export class Renderer {
     this.drawWeather(ctx);
     this.drawLighting(ctx, world);
     this.drawOverlay(ctx, world);
+    ctx.restore();
   }
 
   private drawRoutes(ctx: CanvasRenderingContext2D, world: World): void {

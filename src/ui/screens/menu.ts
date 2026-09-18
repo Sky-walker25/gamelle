@@ -12,6 +12,7 @@ export interface MenuCallbacks {
   onContinue: () => void;
   onPlay: () => void;
   onCodex: () => void;
+  onHowTo: () => void;
   onSettings: () => void;
   onLang: (lang: Lang) => void;
 }
@@ -89,6 +90,9 @@ export function menuScreen(progress: Progress, saved: SavedGame | null, cb: Menu
       onclick: cb.onPlay,
       dataset: { action: 'play' },
     }),
+  );
+  buttons.appendChild(
+    el('button', { text: t('menu.howto'), onclick: cb.onHowTo, dataset: { action: 'howto' } }),
   );
   buttons.appendChild(
     el('button', { text: t('menu.codex'), onclick: cb.onCodex, dataset: { action: 'codex' } }),

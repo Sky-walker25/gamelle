@@ -79,6 +79,7 @@ export class App {
       onContinue: () => this.continueGame(),
       onPlay: () => this.showMaps(),
       onCodex: () => this.showCodex(),
+      onHowTo: () => this.openHowTo(),
       onSettings: () => this.openSettings(),
       onLang: (lang) => {
         this.settings.lang = lang;
@@ -258,6 +259,35 @@ export class App {
             }
           },
         }),
+      ),
+    );
+  }
+
+  openHowTo(): void {
+    const content = el('div', { style: { display: 'flex', flexDirection: 'column', gap: '10px' } });
+    content.appendChild(el('h2', { text: t('howto.title') }));
+    const list = el('ol', {
+      style: { margin: '0', paddingLeft: '20px', lineHeight: '1.5', color: 'var(--text-dim)' },
+    });
+    for (const key of [
+      'howto.1',
+      'howto.2',
+      'howto.3',
+      'howto.4',
+      'howto.5',
+      'howto.6',
+      'howto.7',
+      'howto.8',
+    ] as const) {
+      list.appendChild(el('li', { text: t(key), style: { marginBottom: '6px' } }));
+    }
+    content.appendChild(list);
+    const handle = showModal(this.root, content);
+    content.appendChild(
+      el(
+        'div',
+        { class: 'buttons' },
+        el('button', { class: 'primary', text: t('settings.close'), onclick: () => handle.close() }),
       ),
     );
   }
