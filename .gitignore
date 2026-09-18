@@ -1,0 +1,8 @@
+node_modules/
+dist/
+playwright-report/
+test-results/
+blob-report/
+.vite/
+*.log
+.DS_Store
