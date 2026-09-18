@@ -56,6 +56,12 @@ const fr = {
   'hud.blocks': 'Cette tour bloquerait totalement le passage',
   'hud.enemyOnTile': 'Un ennemi occupe cette case',
   'hud.paused': 'Jeu en pause',
+  'hud.hintBuild':
+    'Choisissez une tour dans le panneau (ou touches 1 à 9), puis cliquez sur une case libre près du chemin.',
+  'hud.hintWave':
+    'Quand vos défenses sont prêtes, lancez la première vague. Les ennemis arrivent par la porte et visent la forteresse.',
+  'hud.hintOpen':
+    'Terrain ouvert : les ennemis suivent la ligne pointillée. Placez vos tours pour allonger leur route sans jamais la couper.',
   'hud.autosaved': 'Partie sauvegardée',
   'tower.level': 'Niveau {level}',
   'tower.max': 'Niveau maximal',
@@ -259,6 +265,11 @@ const en: Record<I18nKey, string> = {
   'hud.blocks': 'This tower would seal the path completely',
   'hud.enemyOnTile': 'An enemy is standing on this tile',
   'hud.paused': 'Game paused',
+  'hud.hintBuild': 'Pick a tower in the panel (or press 1 to 9), then click a free tile near the path.',
+  'hud.hintWave':
+    'When your defences are ready, start the first wave. Enemies enter through the gate and head for the fortress.',
+  'hud.hintOpen':
+    'Open ground: enemies follow the dotted line. Place towers to lengthen their route without ever sealing it.',
   'hud.autosaved': 'Game saved',
   'tower.level': 'Level {level}',
   'tower.max': 'Maximum level',

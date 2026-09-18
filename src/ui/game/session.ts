@@ -46,6 +46,8 @@ export class GameSession {
   private toasts: HTMLElement;
   private incoming: HTMLElement;
   private pausedOverlay: HTMLElement;
+  private hint: HTMLElement;
+  private lastHint = '';
   private goldEl: HTMLElement;
   private livesEl: HTMLElement;
   private livesStat: HTMLElement;
@@ -81,6 +83,7 @@ export class GameSession {
     this.toasts = el('div', { class: 'toasts' });
     this.incoming = el('div', { class: 'incoming' });
     this.pausedOverlay = el('div', { class: 'paused-overlay', text: t('hud.paused') });
+    this.hint = el('div', { class: 'hint hidden', role: 'status' });
     this.field = el(
       'div',
       { class: 'field' },
@@ -88,6 +91,7 @@ export class GameSession {
       this.banner,
       this.incoming,
       this.toasts,
+      this.hint,
       this.pausedOverlay,
     );
 
@@ -174,7 +178,7 @@ export class GameSession {
   // ------------------------------------------------------------------
 
   mount(root: HTMLElement): void {
-    root.appendChild(this.element);
+    if (this.element.parentElement !== root) root.appendChild(this.element);
     this.resizeObserver = new ResizeObserver(() => this.fit());
     this.resizeObserver.observe(this.field);
     this.fit();
@@ -188,6 +192,8 @@ export class GameSession {
     this.destroyed = true;
     this.loop.stop();
     this.resizeObserver?.disconnect();
+    document.removeEventListener('keydown', this.onKeyDown);
+    document.removeEventListener('visibilitychange', this.onVisibility);
     for (const off of this.unsubscribe) off();
     this.unsubscribe = [];
     this.renderer.setWorld(null);
@@ -497,9 +503,22 @@ export class GameSession {
       this.handleTileClick(c, r, ev.shiftKey);
     });
     canvas.addEventListener('contextmenu', (ev) => ev.preventDefault());
-    canvas.addEventListener('keydown', (ev) => this.handleKey(ev));
+    document.addEventListener('keydown', this.onKeyDown);
     document.addEventListener('visibilitychange', this.onVisibility);
   }
+
+  /** Shortcuts work wherever focus is, except inside form fields and while a modal is open. */
+  private onKeyDown = (ev: KeyboardEvent): void => {
+    if (this.destroyed) return;
+    const target = ev.target as HTMLElement | null;
+    if (
+      target &&
+      (target.tagName === 'INPUT' || target.tagName === 'SELECT' || target.tagName === 'TEXTAREA')
+    )
+      return;
+    if (document.querySelector('.modal-backdrop')) return;
+    this.handleKey(ev);
+  };
 
   private onVisibility = (): void => {
     if (document.hidden && !this.world.isOver && !this.loop.paused) this.callbacks.openPause();
@@ -612,6 +631,7 @@ export class GameSession {
       this.buildPanel.refresh();
       this.selectedPanel.refresh();
     }
+    this.selectedPanel.tick();
     if (force || w.lives !== this.lastLives) {
       this.lastLives = w.lives;
       this.livesEl.textContent = `${w.lives}`;
@@ -654,6 +674,21 @@ export class GameSession {
       this.renderIncoming(incomingIndex);
     }
     if (this.view.selectedTowerId && !w.tower(this.view.selectedTowerId)) this.select(0);
+    this.updateHint();
+  }
+
+  /** Contextual help before the first wave of a game. */
+  private updateHint(): void {
+    const w = this.world;
+    let text = '';
+    if (w.waveIndex === 0 && !w.isOver) {
+      if (w.towers.length === 0) text = w.grid.open ? t('hud.hintOpen') : t('hud.hintBuild');
+      else if (w.towers.length < 3) text = t('hud.hintWave');
+    }
+    if (text === this.lastHint) return;
+    this.lastHint = text;
+    this.hint.textContent = text;
+    this.hint.classList.toggle('hidden', text === '');
   }
 
   private renderIncoming(index: number): void {

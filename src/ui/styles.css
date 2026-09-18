@@ -563,6 +563,26 @@ input:focus-visible {
   color: #ff8d86;
   font-weight: 700;
 }
+.field .hint {
+  position: absolute;
+  left: 50%;
+  top: 14px;
+  transform: translateX(-50%);
+  background: var(--panel);
+  border: 1px solid var(--border-strong);
+  border-left: 3px solid var(--accent);
+  border-radius: 8px;
+  padding: 8px 14px;
+  font-size: 13px;
+  max-width: min(560px, 92%);
+  text-align: center;
+  pointer-events: none;
+  box-shadow: var(--shadow);
+  transition: opacity 0.3s;
+}
+.field .hint.hidden {
+  opacity: 0;
+}
 .field .paused-overlay {
   position: absolute;
   inset: 0;

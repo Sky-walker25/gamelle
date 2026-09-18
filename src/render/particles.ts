@@ -24,7 +24,7 @@ export interface Particle {
   bold?: boolean;
 }
 
-const MAX_PARTICLES = 1600;
+const MAX_PARTICLES = 1000;
 
 export class ParticleSystem {
   particles: Particle[] = [];
@@ -351,6 +351,8 @@ export class ParticleSystem {
   }
 
   rocketTrail(x: number, y: number, angle: number): void {
+    // Trails are cosmetic: skip them when the budget is nearly spent.
+    if (this.particles.length > MAX_PARTICLES * 0.7 && Math.random() < 0.6) return;
     this.add({
       kind: 'smoke',
       x,

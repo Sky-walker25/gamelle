@@ -99,6 +99,7 @@ export class AudioEngine {
   private melodyDegree = 0;
   private enabled = true;
   private unlocked = false;
+  private musicRequested = false;
 
   /** Must be called from a user gesture before anything is heard. */
   unlock(): void {
@@ -122,6 +123,7 @@ export class AudioEngine {
       this.applyVolumes();
       this.unlocked = true;
       if (this.ctx.state === 'suspended') void this.ctx.resume();
+      if (this.musicRequested) this.startMusic(this.musicMood);
     } catch {
       this.ctx = null;
     }
@@ -433,6 +435,7 @@ export class AudioEngine {
 
   startMusic(mood: MusicMood): void {
     this.musicMood = mood;
+    this.musicRequested = true;
     if (!this.ctx || !this.music) return;
     if (this.musicTimer !== null) return;
     this.musicStep = 0;
@@ -441,6 +444,7 @@ export class AudioEngine {
   }
 
   stopMusic(): void {
+    this.musicRequested = false;
     if (this.musicTimer !== null) {
       window.clearInterval(this.musicTimer);
       this.musicTimer = null;

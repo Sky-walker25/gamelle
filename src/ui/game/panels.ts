@@ -173,6 +173,9 @@ export class SelectedPanel {
   readonly element: HTMLElement;
   private towerId = 0;
   private upgradeButtons: { button: HTMLButtonElement; cost: number }[] = [];
+  private killsEl: HTMLElement | null = null;
+  private damageEl: HTMLElement | null = null;
+  private sellButton: HTMLButtonElement | null = null;
 
   constructor(
     private readonly world: World,
@@ -312,23 +315,35 @@ export class SelectedPanel {
     }
 
     const info = el('div', { class: 'stat-list' });
+    this.killsEl = el('span', { class: 'v', text: `${tower.kills}` });
+    this.damageEl = el('span', { class: 'v', text: formatNumber(tower.damageDealt) });
     info.appendChild(el('span', { class: 'k', text: t('tower.kills') }));
-    info.appendChild(el('span', { class: 'v', text: `${tower.kills}` }));
+    info.appendChild(this.killsEl);
     info.appendChild(el('span', { class: 'k', text: t('tower.damageDealt') }));
-    info.appendChild(el('span', { class: 'v', text: formatNumber(tower.damageDealt) }));
+    info.appendChild(this.damageEl);
     this.element.appendChild(info);
     this.element.appendChild(el('div', { class: 'lore', text: L(lvl.lore) }));
-    this.element.appendChild(
-      el(
-        'div',
-        { class: 'actions' },
-        el('button', {
-          class: 'danger',
-          text: t('tower.sell', { gold: world.sellValue(tower) }),
-          onclick: () => this.callbacks.onSell(tower.id),
-        }),
-      ),
-    );
+    this.sellButton = el('button', {
+      class: 'danger',
+      text: t('tower.sell', { gold: world.sellValue(tower) }),
+      onclick: () => this.callbacks.onSell(tower.id),
+    }) as HTMLButtonElement;
+    this.element.appendChild(el('div', { class: 'actions' }, this.sellButton));
+  }
+
+  /** Per-frame update of the live counters without rebuilding the panel. */
+  tick(): void {
+    if (!this.towerId) return;
+    const tower = this.world.tower(this.towerId);
+    if (!tower) return;
+    if (this.killsEl) {
+      const kills = `${tower.kills}`;
+      if (this.killsEl.textContent !== kills) this.killsEl.textContent = kills;
+    }
+    if (this.damageEl) {
+      const dmg = formatNumber(tower.damageDealt);
+      if (this.damageEl.textContent !== dmg) this.damageEl.textContent = dmg;
+    }
   }
 
   /** Cheap per-frame refresh of affordability. */

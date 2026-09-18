@@ -35,6 +35,7 @@ export class App {
   progress: Progress;
   session: GameSession | null = null;
   private screen: HTMLElement | null = null;
+  private screenDispose: (() => void) | null = null;
   private screenId: ScreenId = 'menu';
   private lastMapId: string | undefined;
   private pauseOpen = false;
@@ -55,13 +56,15 @@ export class App {
     this.showMenu();
   }
 
-  private setScreen(id: ScreenId, node: HTMLElement): void {
+  private setScreen(id: ScreenId, node: HTMLElement, dispose: (() => void) | null = null): void {
     if (this.session && id !== 'game') {
       this.session.destroy();
       this.session = null;
     }
+    this.screenDispose?.();
     this.screen?.remove();
     this.screen = node;
+    this.screenDispose = dispose;
     this.screenId = id;
     this.root.appendChild(node);
   }
@@ -72,21 +75,19 @@ export class App {
 
   showMenu(): void {
     const saved = loadGame();
-    this.setScreen(
-      'menu',
-      menuScreen(this.progress, saved, {
-        onContinue: () => this.continueGame(),
-        onPlay: () => this.showMaps(),
-        onCodex: () => this.showCodex(),
-        onSettings: () => this.openSettings(),
-        onLang: (lang) => {
-          this.settings.lang = lang;
-          saveSettings(this.settings);
-          setLang(lang);
-          this.showMenu();
-        },
-      }),
-    );
+    const screen = menuScreen(this.progress, saved, {
+      onContinue: () => this.continueGame(),
+      onPlay: () => this.showMaps(),
+      onCodex: () => this.showCodex(),
+      onSettings: () => this.openSettings(),
+      onLang: (lang) => {
+        this.settings.lang = lang;
+        saveSettings(this.settings);
+        setLang(lang);
+        this.showMenu();
+      },
+    });
+    this.setScreen('menu', screen.element, screen.dispose);
   }
 
   showMaps(initialMap?: string): void {
@@ -145,7 +146,7 @@ export class App {
     }
   }
 
-  private runSession(world: World): void {
+  private runSession(world: World): GameSession {
     this.lastMapId = world.def.id;
     const session = new GameSession(world, this.settings, {
       onExit: (reason) => this.exitSession(reason),
@@ -153,12 +154,21 @@ export class App {
       onAutosave: (w) => saveGame(w.serialize()),
       openPause: () => this.openPause(),
     });
-    const node = session.element;
-    this.setScreen('game', node);
+    this.setScreen('game', session.element);
     this.session = session;
     session.mount(this.root);
-    // `mount` appended the element again; keep a single instance.
-    if (node.parentElement !== this.root) this.root.appendChild(node);
+    return session;
+  }
+
+  /** Rebuilds the in-game interface around the same world (used after a language change). */
+  private rebuildSessionUi(): void {
+    const old = this.session;
+    if (!old) return;
+    const world = old.world;
+    const speed = old.speedIndex;
+    old.destroy();
+    this.session = null;
+    this.runSession(world).setSpeed(speed);
   }
 
   private exitSession(reason: 'quit' | 'abandon' | 'menu' | 'maps' | 'retry'): void {
@@ -286,6 +296,10 @@ export class App {
             if (this.screenId === 'menu') this.showMenu();
             else if (this.screenId === 'maps') this.showMaps();
             else if (this.screenId === 'codex') this.showCodex();
+            else if (this.screenId === 'game') {
+              this.rebuildSessionUi();
+              if (this.pauseOpen) this.session?.setPaused(true);
+            }
           }
           if (this.session && !wasPaused && !this.pauseOpen) this.session.setPaused(false);
         },

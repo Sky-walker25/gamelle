@@ -16,7 +16,13 @@ export interface MenuCallbacks {
   onLang: (lang: Lang) => void;
 }
 
-export function menuScreen(progress: Progress, saved: SavedGame | null, cb: MenuCallbacks): HTMLElement {
+export interface Screen {
+  element: HTMLElement;
+  dispose: () => void;
+}
+
+export function menuScreen(progress: Progress, saved: SavedGame | null, cb: MenuCallbacks): Screen {
+  const disposers: (() => void)[] = [];
   const bg = el('canvas', { class: 'menu-bg', 'aria-hidden': 'true' }) as HTMLCanvasElement;
   const screen = el('div', { class: 'screen menu' }, bg);
 
@@ -47,7 +53,8 @@ export function menuScreen(progress: Progress, saved: SavedGame | null, cb: Menu
       ctx.fillRect(0, 0, bg.width, bg.height);
     };
     requestAnimationFrame(fit);
-    window.addEventListener('resize', fit, { once: false });
+    window.addEventListener('resize', fit);
+    disposers.push(() => window.removeEventListener('resize', fit));
   }
 
   const lang = el(
@@ -104,5 +111,5 @@ export function menuScreen(progress: Progress, saved: SavedGame | null, cb: Menu
   );
   screen.appendChild(lang);
   screen.appendChild(content);
-  return screen;
+  return { element: screen, dispose: () => disposers.forEach((d) => d()) };
 }
