@@ -13,8 +13,8 @@ première visite grâce à un service worker.
 
 ## Jouer
 
-- **En ligne** : la branche `main` est déployée automatiquement sur GitHub Pages
-  (`https://<propriétaire>.github.io/gamelle/`).
+- **En ligne** : <https://sky-walker25.github.io/gamelle/> — la branche `main`
+  est déployée automatiquement à chaque push.
 - **En local** :
 
 ```bash
@@ -123,6 +123,6 @@ qui explique aussi comment ajouter une tour, un ennemi ou une carte.
 
 - `.github/workflows/ci.yml` : typecheck, lint, format, tests unitaires,
   build, puis tests Playwright.
-- `.github/workflows/deploy.yml` : à chaque push sur `main`, build avec le
-  bon chemin de base et déploiement sur GitHub Pages. Activez *Settings →
-  Pages → Source : GitHub Actions* sur le dépôt.
+- `.github/workflows/deploy.yml` : à chaque push sur `main`, build avec le bon
+  chemin de base puis publication sur la branche `gh-pages`, que GitHub Pages
+  sert (*Settings → Pages → Source : Deploy from a branch → gh-pages*).

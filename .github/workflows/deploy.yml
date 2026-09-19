@@ -5,17 +5,18 @@ on:
     branches: [main]
   workflow_dispatch:
 
+# The site is published by pushing the build to the `gh-pages` branch, which
+# GitHub Pages serves ("Deploy from a branch" source). This needs no Pages API
+# permission, unlike actions/configure-pages.
 permissions:
-  contents: read
-  pages: write
-  id-token: write
+  contents: write
 
 concurrency:
   group: pages
   cancel-in-progress: true
 
 jobs:
-  build:
+  deploy:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -29,20 +30,12 @@ jobs:
         env:
           # The site is served from https://<owner>.github.io/<repo>/
           BASE_PATH: /${{ github.event.repository.name }}/
-      - uses: actions/configure-pages@v5
+      # Jekyll would otherwise drop files starting with an underscore.
+      - run: touch dist/.nojekyll
+      - name: Publish to gh-pages
+        uses: peaceiris/actions-gh-pages@v4
         with:
-          # Turns GitHub Pages on for the repository the first time this runs.
-          enablement: true
-      - uses: actions/upload-pages-artifact@v3
-        with:
-          path: dist
-
-  deploy:
-    needs: build
-    runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    steps:
-      - id: deployment
-        uses: actions/deploy-pages@v4
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./dist
+          publish_branch: gh-pages
+          commit_message: "Deploy ${{ github.sha }}"
