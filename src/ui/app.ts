@@ -1,6 +1,7 @@
 import { audio } from '@/audio/audio';
 import { formatNumber } from '@/core/math';
 import { hashSeed } from '@/core/rng';
+import { enemyDef } from '@/data/enemies';
 import { MAP_BY_ID } from '@/data/maps';
 import { towerLevelDef } from '@/data/towers';
 import {
@@ -426,6 +427,23 @@ export class App {
     } else {
       content.appendChild(el('h2', { class: 'defeat', text: t('over.defeat') }));
       content.appendChild(el('p', { text: t('over.defeatText', { wave: world.waveIndex }) }));
+      if (world.recentLeaks.length > 0) {
+        const list = el('div', { class: 'leak-list' });
+        list.appendChild(el('div', { class: 'k', text: t('over.brokeThrough') }));
+        for (const leak of world.recentLeaks.slice(0, 4)) {
+          list.appendChild(
+            el('div', {
+              class: 'leak',
+              text: t('over.leakLine', {
+                wave: leak.wave,
+                name: L(enemyDef(leak.defId).name),
+                lives: leak.lives,
+              }),
+            }),
+          );
+        }
+        content.appendChild(list);
+      }
     }
     if (unlockedText) content.appendChild(el('div', { class: 'unlocked', text: unlockedText }));
 

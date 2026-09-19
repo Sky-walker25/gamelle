@@ -877,6 +877,25 @@ button.toggle.active {
 .modal .big-stars .off {
   color: var(--text-faint);
 }
+.modal .leak-list {
+  background: rgba(217, 70, 59, 0.1);
+  border: 1px solid rgba(217, 70, 59, 0.35);
+  border-radius: 8px;
+  padding: 8px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  font-size: 13px;
+}
+.modal .leak-list .k {
+  color: var(--text-faint);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+.modal .leak-list .leak {
+  color: #ffd6d2;
+}
 .modal .unlocked {
   background: rgba(90, 211, 90, 0.12);
   border: 1px solid rgba(90, 211, 90, 0.4);

@@ -122,6 +122,9 @@ export class World {
   projectiles: Projectile[] = [];
   traps: Trap[] = [];
 
+  /** The last enemies that reached the base, newest first. Used by the defeat screen. */
+  recentLeaks: { defId: string; lives: number; wave: number; at: number }[] = [];
+
   stats: WorldStats = {
     kills: 0,
     leaks: 0,
@@ -474,6 +477,8 @@ export class World {
     e.leaked = true;
     this.lives = Math.max(0, this.lives - e.livesDamage);
     this.stats.leaks++;
+    this.recentLeaks.unshift({ defId: e.defId, lives: e.livesDamage, wave: e.wave, at: this.time });
+    if (this.recentLeaks.length > 6) this.recentLeaks.length = 6;
     this.events.emit('enemyLeaked', { enemy: e, lives: e.livesDamage });
     if (this.lives <= 0 && !this.isOver) {
       this.phase = 'lost';
