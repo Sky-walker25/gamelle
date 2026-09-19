@@ -225,6 +225,58 @@ test.describe('Gamelle Defense', () => {
   });
 });
 
+test.describe('Icons', () => {
+  /**
+   * Icons are canvases kept in a cache. Handing back the cached element with
+   * cloneNode copies the element but not its bitmap, which left every tower
+   * blank from the second visit to a screen onwards.
+   */
+  test('tower and map icons still show after leaving and re-entering a screen', async ({ page }) => {
+    const blankCount = (selector: string) =>
+      page.evaluate((sel: string) => {
+        let blank = 0;
+        let total = 0;
+        for (const node of document.querySelectorAll(sel)) {
+          const canvas = node as HTMLCanvasElement;
+          const context = canvas.getContext('2d');
+          if (!context) continue;
+          const pixels = context.getImageData(0, 0, canvas.width, canvas.height).data;
+          let ink = 0;
+          for (let i = 3; i < pixels.length; i += 4) if ((pixels[i] ?? 0) > 8) ink++;
+          total++;
+          if (ink === 0) blank++;
+        }
+        return { blank, total };
+      }, selector);
+
+    await page.goto('/');
+    for (let round = 0; round < 2; round++) {
+      await page.getByRole('button', { name: /Campagne/ }).click();
+      const maps = await blankCount('.map-card canvas');
+      expect(maps.total, 'map previews').toBeGreaterThan(0);
+      expect(maps.blank, `map previews, round ${round}`).toBe(0);
+      await page.locator('button[data-action="start"]').click();
+      await expect(page.locator('.field canvas')).toBeVisible();
+      const towers = await blankCount('.tower-card canvas');
+      expect(towers.total, 'tower icons').toBe(9);
+      expect(towers.blank, `tower icons, round ${round}`).toBe(0);
+      await page.getByRole('button', { name: 'Pause' }).click();
+      await page.locator('button[data-action="quit"]').click();
+      await expect(page.getByRole('button', { name: /Campagne/ })).toBeVisible();
+    }
+    // The encyclopedia draws the same icons at other sizes.
+    for (let round = 0; round < 2; round++) {
+      await page.getByRole('button', { name: /Encyclopédie/ }).click();
+      const cards = await blankCount('.codex-card canvas');
+      expect(cards.blank, `codex icons, round ${round}`).toBe(0);
+      await page.locator('button[data-tab="table"]').click();
+      const table = await blankCount('.spec-table canvas');
+      expect(table.blank, `table icons, round ${round}`).toBe(0);
+      await page.locator('button[data-action="back"]').click();
+    }
+  });
+});
+
 test.describe('Automatic waves, comparison table and map editor', () => {
   test('the Auto toggle chains waves without clicking', async ({ page }) => {
     await startFirstMap(page);

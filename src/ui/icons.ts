@@ -24,7 +24,8 @@ function makeCanvas(size: number): { canvas: HTMLCanvasElement; ctx: CanvasRende
 export function towerIcon(defId: string, level = 1, branch: -1 | 0 | 1 = -1, size = 64): HTMLCanvasElement {
   const key = `tower:${defId}:${level}:${branch}:${size}`;
   const cached = cache.get(key);
-  if (cached) return cached.cloneNode(true) as HTMLCanvasElement;
+  // cloneNode copies the element but not its bitmap: the copy must be drawn.
+  if (cached) return copyCanvas(cached);
   const { canvas, ctx } = makeCanvas(size);
   const lvl = towerLevelDef(defId, level, branch);
   const tower: Tower = {
@@ -57,7 +58,6 @@ export function towerIcon(defId: string, level = 1, branch: -1 | 0 | 1 = -1, siz
   ctx.arc(0, 0, 34, 0, Math.PI * 2);
   ctx.clip();
   drawTower(ctx, tower, lvl, 1.2, false);
-  // Cloning keeps the drawn bitmap only when the canvas is copied via drawImage.
   cache.set(key, copyCanvas(canvas));
   return canvas;
 }
