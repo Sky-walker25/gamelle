@@ -25,6 +25,14 @@ ni asset externe. Lire `docs/ARCHITECTURE.md` avant de toucher au moteur.
   régénérer à chaque livraison.
 - Pas de `console.log` dans `src` (ESLint) ; `console.warn`/`error` tolérés.
 
+## Ergonomie
+
+- Toute nouvelle commande doit rester atteignable au doigt : 44 px minimum sur
+  écran tactile, et testée dans `e2e/mobile.spec.ts`.
+- Le terrain garde la priorité sur les panneaux en dessous de 700 px de large :
+  les panneaux se posent par-dessus la carte, ils ne la rétrécissent pas.
+- Les entrées passent par `pointer*` uniquement, jamais `mouse*` ni `touch*`.
+
 ## Vérification visuelle
 
 Chromium est disponible pour Playwright ; un script Node avec `chromium.launch()`

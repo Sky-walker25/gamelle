@@ -1,4 +1,4 @@
-import { TAU } from '@/core/math';
+import { TAU, clamp } from '@/core/math';
 import { enemyDef } from '@/data/enemies';
 import { towerLevelDef } from '@/data/towers';
 import { TILE, tileCenter } from '@/sim/grid';
@@ -51,6 +51,10 @@ export class Renderer {
   private lightmap: HTMLCanvasElement | null = null;
   private dpr = 1;
   private scale = 1;
+  private fitScale = 1;
+  private zoom = 1;
+  private panX = 0;
+  private panY = 0;
   private offsetX = 0;
   private offsetY = 0;
   private cssWidth = 0;
@@ -73,6 +77,9 @@ export class Renderer {
     for (const off of this.unsubscribe) off();
     this.unsubscribe = [];
     this.world = world;
+    this.zoom = 1;
+    this.panX = 0;
+    this.panY = 0;
     this.particles.clear();
     this.tracers = [];
     this.terrain = null;
@@ -286,15 +293,111 @@ export class Renderer {
     this.updateCamera();
   }
 
+  /**
+   * The camera fits the whole map by default (`zoom` 1). Zooming in keeps the
+   * map inside the viewport: the pan offset is always clamped so no empty
+   * space shows on a side unless the map is smaller than the viewport, in
+   * which case it stays centred on that axis.
+   */
   private updateCamera(): void {
     if (!this.world) return;
     const w = this.world.grid.width;
     const h = this.world.grid.height;
-    this.scale = Math.min(this.cssWidth / w, this.cssHeight / h);
-    this.offsetX = (this.cssWidth - w * this.scale) / 2;
-    this.offsetY = (this.cssHeight - h * this.scale) / 2;
+    this.fitScale = Math.min(this.cssWidth / w, this.cssHeight / h);
+    this.scale = this.fitScale * this.zoom;
+    const viewW = w * this.scale;
+    const viewH = h * this.scale;
+    if (viewW <= this.cssWidth) {
+      this.panX = 0;
+      this.offsetX = (this.cssWidth - viewW) / 2;
+    } else {
+      const maxPan = (viewW - this.cssWidth) / 2 / this.scale;
+      this.panX = clamp(this.panX, -maxPan, maxPan);
+      this.offsetX = (this.cssWidth - viewW) / 2 - this.panX * this.scale;
+    }
+    if (viewH <= this.cssHeight) {
+      this.panY = 0;
+      this.offsetY = (this.cssHeight - viewH) / 2;
+    } else {
+      const maxPan = (viewH - this.cssHeight) / 2 / this.scale;
+      this.panY = clamp(this.panY, -maxPan, maxPan);
+      this.offsetY = (this.cssHeight - viewH) / 2 - this.panY * this.scale;
+    }
     const wanted = Math.min(2, Math.max(1, Math.ceil(this.scale * this.dpr * 2) / 2));
     if (!this.terrain || Math.abs(wanted - this.terrainScale) > 0.01) this.rebuildTerrain(wanted);
+  }
+
+  /** Zoom level, 1 = the whole map fits. */
+  get zoomLevel(): number {
+    return this.zoom;
+  }
+
+  get minZoom(): number {
+    return 1;
+  }
+
+  /** Enough zoom for a tile to be comfortably tappable, capped so it stays useful. */
+  get maxZoom(): number {
+    if (!this.world) return 3;
+    const wanted = 72 / Math.max(1, this.fitScale * TILE);
+    return clamp(wanted, 1.5, 5);
+  }
+
+  /**
+   * Zoom that makes a tile about `tilePx` wide, used to open small screens at a
+   * size where a finger can actually hit a tile. Never zooms out past the fit.
+   */
+  zoomForTileSize(tilePx: number): number {
+    return clamp(tilePx / Math.max(1, this.fitScale * TILE), 1, this.maxZoom);
+  }
+
+  /**
+   * Zoom needed for the map to cover this share of the viewport height. Wide
+   * maps on tall phones otherwise leave most of the screen empty.
+   */
+  zoomToCoverHeight(fraction: number): number {
+    if (!this.world) return 1;
+    const mapHeight = this.world.grid.height * this.fitScale;
+    if (mapHeight <= 0) return 1;
+    return clamp((this.cssHeight * fraction) / mapHeight, 1, this.maxZoom);
+  }
+
+  /** Sets the zoom, keeping the given screen point anchored under the finger or cursor. */
+  setZoom(zoom: number, anchorX?: number, anchorY?: number): void {
+    const next = clamp(zoom, this.minZoom, this.maxZoom);
+    if (Math.abs(next - this.zoom) < 0.0005) return;
+    const ax = anchorX ?? this.cssWidth / 2;
+    const ay = anchorY ?? this.cssHeight / 2;
+    const before = this.screenToWorld(ax, ay);
+    this.zoom = next;
+    this.updateCamera();
+    const after = this.screenToWorld(ax, ay);
+    this.panX += before.x - after.x;
+    this.panY += before.y - after.y;
+    this.updateCamera();
+  }
+
+  /** Moves the camera by a screen-space delta (drag). */
+  panBy(dxScreen: number, dyScreen: number): void {
+    if (this.zoom <= 1) return;
+    this.panX -= dxScreen / this.scale;
+    this.panY -= dyScreen / this.scale;
+    this.updateCamera();
+  }
+
+  /** Centres the camera on a world point, as far as the clamp allows. */
+  centerOn(x: number, y: number): void {
+    if (!this.world) return;
+    this.panX = x - this.world.grid.width / 2;
+    this.panY = y - this.world.grid.height / 2;
+    this.updateCamera();
+  }
+
+  resetCamera(): void {
+    this.zoom = 1;
+    this.panX = 0;
+    this.panY = 0;
+    this.updateCamera();
   }
 
   private rebuildTerrain(scale = this.terrainScale): void {

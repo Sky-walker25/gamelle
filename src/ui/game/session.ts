@@ -12,7 +12,7 @@ import { TARGET_MODES } from '@/sim/types';
 import type { World } from '@/sim/world';
 import { clear, el } from '../dom';
 import { L, t } from '../i18n';
-import { BuildPanel, SelectedPanel } from './panels';
+import { BuildPanel, SelectedPanel, towerName } from './panels';
 
 export type ExitReason = 'quit' | 'abandon' | 'menu' | 'maps' | 'retry';
 
@@ -47,6 +47,8 @@ export class GameSession {
   private toasts: HTMLElement;
   private incoming: HTMLElement;
   private pausedOverlay: HTMLElement;
+  private placementBar: HTMLElement;
+  private zoomControls: HTMLElement;
   private hint: HTMLElement;
   private lastHint = '';
   private goldEl: HTMLElement;
@@ -69,6 +71,7 @@ export class GameSession {
   private resizeObserver: ResizeObserver | null = null;
   private destroyed = false;
   private autosaveTimer = 0;
+  private zoomInitialised = false;
   private musicIntensity = 0;
   private pointerDown: { x: number; y: number; time: number } | null = null;
   private gameOverShown = false;
@@ -86,14 +89,40 @@ export class GameSession {
     this.incoming = el('div', { class: 'incoming' });
     this.pausedOverlay = el('div', { class: 'paused-overlay', text: t('hud.paused') });
     this.hint = el('div', { class: 'hint hidden', role: 'status' });
+    this.placementBar = el('div', { class: 'placement-bar', role: 'dialog', 'aria-label': t('hud.build') });
+    this.zoomControls = el(
+      'div',
+      { class: 'zoom-controls' },
+      el('button', {
+        text: '+',
+        'aria-label': t('hud.zoomIn'),
+        title: t('hud.zoomIn'),
+        onclick: () => this.zoomBy(1.4),
+      }),
+      el('button', {
+        text: '−',
+        'aria-label': t('hud.zoomOut'),
+        title: t('hud.zoomOut'),
+        onclick: () => this.zoomBy(1 / 1.4),
+      }),
+      el('button', {
+        class: 'reset',
+        text: '⤢',
+        'aria-label': t('hud.zoomReset'),
+        title: t('hud.zoomReset'),
+        onclick: () => this.resetZoom(),
+      }),
+    );
     this.field = el(
       'div',
       { class: 'field' },
       this.canvas,
       this.banner,
       this.incoming,
+      this.zoomControls,
       this.toasts,
       this.hint,
+      this.placementBar,
       this.pausedOverlay,
     );
 
@@ -224,6 +253,24 @@ export class GameSession {
     const rect = this.field.getBoundingClientRect();
     if (rect.width < 10 || rect.height < 10) return;
     this.renderer.resize(rect.width, rect.height);
+    if (!this.zoomInitialised) {
+      this.zoomInitialised = true;
+      // Touch screens open zoomed enough that a tile is a comfortable target.
+      const coarse = window.matchMedia?.('(pointer: coarse)').matches ?? false;
+      if (coarse) {
+        const zoom = Math.max(this.renderer.zoomForTileSize(38), this.renderer.zoomToCoverHeight(0.78));
+        this.renderer.setZoom(zoom);
+        const base = this.world.grid.bases[0];
+        const spawn = this.world.grid.spawns[0];
+        if (base && spawn) {
+          this.renderer.centerOn(
+            ((base[0] + spawn[0]) / 2 + 0.5) * TILE,
+            ((base[1] + spawn[1]) / 2 + 0.5) * TILE,
+          );
+        }
+      }
+      this.refreshZoomControls();
+    }
   }
 
   setPaused(paused: boolean): void {
@@ -401,6 +448,7 @@ export class GameSession {
 
   pickBuild(defId: string | null): void {
     if (defId && !this.world.unlockedTowers.has(defId)) return;
+    if (!defId) this.hidePlacementBar();
     this.view.buildDefId = defId;
     this.buildPanel.setActive(defId);
     if (defId) this.select(0);
@@ -408,6 +456,7 @@ export class GameSession {
   }
 
   select(towerId: number): void {
+    if (towerId) this.hidePlacementBar();
     this.view.selectedTowerId = towerId;
     this.selectedPanel.show(towerId ? this.world.tower(towerId) : undefined);
     if (towerId) {
@@ -488,27 +537,41 @@ export class GameSession {
 
   private bindInput(): void {
     const canvas = this.canvas;
-    const tileAt = (ev: PointerEvent): [number, number] => {
+    const pointers = new Map<number, { x: number; y: number }>();
+    let pinchDistance = 0;
+    let pinchZoom = 1;
+    let dragged = false;
+    let touching = false;
+
+    const localPoint = (ev: PointerEvent): { x: number; y: number } => {
       const rect = canvas.getBoundingClientRect();
-      const p = this.renderer.screenToWorld(ev.clientX - rect.left, ev.clientY - rect.top);
+      return { x: ev.clientX - rect.left, y: ev.clientY - rect.top };
+    };
+    const tileAt = (ev: PointerEvent): [number, number] => {
+      const local = localPoint(ev);
+      const p = this.renderer.screenToWorld(local.x, local.y);
       const col = Math.floor(p.x / TILE);
       const row = Math.floor(p.y / TILE);
       if (!this.world.grid.inBounds(col, row)) return [-1, -1];
       return [col, row];
     };
-    canvas.addEventListener('pointermove', (ev) => {
-      if (ev.pointerType === 'touch') return;
-      const [c, r] = tileAt(ev);
-      this.view.hoverCol = c;
-      this.view.hoverRow = r;
-    });
-    canvas.addEventListener('pointerleave', () => {
-      this.view.hoverCol = -1;
-      this.view.hoverRow = -1;
-    });
+
     canvas.addEventListener('pointerdown', (ev) => {
       audio.unlock();
       canvas.focus();
+      pointers.set(ev.pointerId, { x: ev.clientX, y: ev.clientY });
+      canvas.setPointerCapture(ev.pointerId);
+      if (ev.pointerType === 'touch') touching = true;
+      if (pointers.size === 2) {
+        const both = [...pointers.values()];
+        const a = both[0];
+        const b = both[1];
+        pinchDistance = a && b ? Math.hypot(a.x - b.x, a.y - b.y) : 0;
+        pinchZoom = this.renderer.zoomLevel;
+        dragged = true;
+        return;
+      }
+      dragged = false;
       this.pointerDown = { x: ev.clientX, y: ev.clientY, time: performance.now() };
       if (ev.pointerType === 'touch') {
         const [c, r] = tileAt(ev);
@@ -516,10 +579,59 @@ export class GameSession {
         this.view.hoverRow = r;
       }
     });
+
+    canvas.addEventListener('pointermove', (ev) => {
+      const previous = pointers.get(ev.pointerId);
+      if (previous) pointers.set(ev.pointerId, { x: ev.clientX, y: ev.clientY });
+
+      // Two fingers: pinch to zoom around their midpoint.
+      if (pointers.size === 2 && previous) {
+        const both = [...pointers.values()];
+        const a = both[0];
+        const b = both[1];
+        if (a && b && pinchDistance > 0) {
+          const distance = Math.hypot(a.x - b.x, a.y - b.y);
+          const rect = canvas.getBoundingClientRect();
+          this.renderer.setZoom(
+            pinchZoom * (distance / pinchDistance),
+            (a.x + b.x) / 2 - rect.left,
+            (a.y + b.y) / 2 - rect.top,
+          );
+          this.refreshZoomControls();
+        }
+        return;
+      }
+
+      if (previous && this.pointerDown) {
+        const dx = ev.clientX - previous.x;
+        const dy = ev.clientY - previous.y;
+        const total = Math.hypot(ev.clientX - this.pointerDown.x, ev.clientY - this.pointerDown.y);
+        // Dragging pans the map, but only once zoomed in and past a small threshold.
+        if (total > 10 && this.renderer.zoomLevel > 1) {
+          dragged = true;
+          this.renderer.panBy(dx, dy);
+          return;
+        }
+        if (total > 10) dragged = true;
+      }
+      if (ev.pointerType === 'touch') return;
+      touching = false;
+      const [c, r] = tileAt(ev);
+      this.view.hoverCol = c;
+      this.view.hoverRow = r;
+    });
+
+    const endPointer = (ev: PointerEvent): void => {
+      pointers.delete(ev.pointerId);
+      if (pointers.size < 2) pinchDistance = 0;
+    };
+
     canvas.addEventListener('pointerup', (ev) => {
       const down = this.pointerDown;
+      const wasDragged = dragged;
+      endPointer(ev);
       this.pointerDown = null;
-      if (!down) return;
+      if (!down || wasDragged) return;
       const moved = Math.hypot(ev.clientX - down.x, ev.clientY - down.y);
       if (moved > 12) return;
       if (ev.button === 2) {
@@ -527,11 +639,148 @@ export class GameSession {
         return;
       }
       const [c, r] = tileAt(ev);
-      this.handleTileClick(c, r, ev.shiftKey);
+      // On a touch screen a tap only aims: building needs a second, explicit confirmation.
+      if (ev.pointerType === 'touch') this.handleTileTap(c, r);
+      else this.handleTileClick(c, r, ev.shiftKey);
     });
+    canvas.addEventListener('pointercancel', endPointer);
+    canvas.addEventListener('lostpointercapture', endPointer);
+
+    // A touch lifts the pointer out of the canvas, and the browser then sends a
+    // synthetic mouse leave: neither may wipe the tile the player just aimed at.
+    canvas.addEventListener('pointerleave', (ev) => {
+      if (ev.pointerType === 'touch' || touching || pointers.size > 0) return;
+      if (this.placementBar.classList.contains('show')) return;
+      this.view.hoverCol = -1;
+      this.view.hoverRow = -1;
+    });
+
+    canvas.addEventListener(
+      'wheel',
+      (ev) => {
+        ev.preventDefault();
+        const rect = canvas.getBoundingClientRect();
+        const factor = Math.pow(0.999, ev.deltaY);
+        this.renderer.setZoom(
+          this.renderer.zoomLevel * factor,
+          ev.clientX - rect.left,
+          ev.clientY - rect.top,
+        );
+        this.refreshZoomControls();
+      },
+      { passive: false },
+    );
+
     canvas.addEventListener('contextmenu', (ev) => ev.preventDefault());
     document.addEventListener('keydown', this.onKeyDown);
     document.addEventListener('visibilitychange', this.onVisibility);
+  }
+
+  /**
+   * Touch flow: the first tap aims (ghost + confirmation bar), the second
+   * confirms. Tapping an existing tower selects it as usual.
+   */
+  handleTileTap(col: number, row: number): void {
+    if (col < 0 || row < 0) {
+      this.cancel();
+      return;
+    }
+    const existing = this.world.towerAt(col, row);
+    if (existing) {
+      this.select(existing.id);
+      audio.play('click');
+      return;
+    }
+    if (this.view.buildDefId) {
+      this.view.hoverCol = col;
+      this.view.hoverRow = row;
+      this.showPlacementBar();
+      audio.play('click');
+      return;
+    }
+    this.select(0);
+  }
+
+  /** Confirmation bar shown over the map while aiming a tower on a touch screen. */
+  private showPlacementBar(): void {
+    const defId = this.view.buildDefId;
+    if (!defId) {
+      this.placementBar.classList.remove('show');
+      return;
+    }
+    const failure = this.world.canBuild(defId, this.view.hoverCol, this.view.hoverRow);
+    const cost = this.world.towerCost(defId);
+    clear(this.placementBar);
+    this.placementBar.appendChild(
+      el(
+        'div',
+        { class: 'info' },
+        el('span', { class: 'name', text: towerName(defId) }),
+        el('span', { class: failure === 'gold' ? 'cost poor' : 'cost', text: t('hud.cost', { cost }) }),
+      ),
+    );
+    if (failure) {
+      const key =
+        failure === 'gold'
+          ? 'hud.noGold'
+          : failure === 'blocks'
+            ? 'hud.blocks'
+            : failure === 'enemy'
+              ? 'hud.enemyOnTile'
+              : 'hud.cannotBuild';
+      this.placementBar.appendChild(el('div', { class: 'why', text: t(key) }));
+    }
+    this.placementBar.appendChild(
+      el(
+        'div',
+        { class: 'actions' },
+        el('button', {
+          class: 'cancel',
+          text: '✕',
+          'aria-label': t('keys.cancel'),
+          onclick: () => this.cancel(),
+        }),
+        el('button', {
+          class: 'primary confirm',
+          text: `✓ ${t('hud.build')}`,
+          disabled: failure !== null,
+          dataset: { action: 'confirm-build' },
+          onclick: () => this.confirmPlacement(),
+        }),
+      ),
+    );
+    this.placementBar.classList.add('show');
+  }
+
+  private hidePlacementBar(): void {
+    this.placementBar.classList.remove('show');
+  }
+
+  /** Builds the aimed tower and keeps the same kind selected for quick repeats. */
+  confirmPlacement(): void {
+    const defId = this.view.buildDefId;
+    if (!defId) return;
+    if (!this.tryBuild(this.view.hoverCol, this.view.hoverRow)) {
+      this.showPlacementBar();
+      return;
+    }
+    this.hidePlacementBar();
+    if (this.world.gold < this.world.towerCost(defId)) this.pickBuild(null);
+  }
+
+  private refreshZoomControls(): void {
+    const zoomed = this.renderer.zoomLevel > 1.01;
+    this.zoomControls.classList.toggle('zoomed', zoomed);
+  }
+
+  zoomBy(factor: number): void {
+    this.renderer.setZoom(this.renderer.zoomLevel * factor);
+    this.refreshZoomControls();
+  }
+
+  resetZoom(): void {
+    this.renderer.resetCamera();
+    this.refreshZoomControls();
   }
 
   /** Shortcuts work wherever focus is, except inside form fields and while a modal is open. */
@@ -570,6 +819,7 @@ export class GameSession {
   }
 
   cancel(): void {
+    this.hidePlacementBar();
     if (this.view.buildDefId) this.pickBuild(null);
     else this.select(0);
   }
@@ -667,10 +917,11 @@ export class GameSession {
       this.lastLives = w.lives;
       this.livesEl.textContent = `${w.lives}`;
     }
+    const compact = this.element.clientWidth < 520;
     const waveLabel =
       w.mode === 'endless'
-        ? t('hud.waveEndless', { n: w.waveIndex })
-        : t('hud.waveOf', { n: w.waveIndex, total: w.def.waveCount });
+        ? t(compact ? 'hud.waveShort' : 'hud.waveEndless', { n: w.waveIndex })
+        : t(compact ? 'hud.waveShortOf' : 'hud.waveOf', { n: w.waveIndex, total: w.def.waveCount });
     if (force || waveLabel !== this.lastWaveLabel) {
       this.lastWaveLabel = waveLabel;
       this.waveEl.textContent = waveLabel;
@@ -713,13 +964,17 @@ export class GameSession {
     const w = this.world;
     let text = '';
     if (w.waveIndex === 0 && !w.isOver) {
-      if (w.towers.length === 0) text = w.grid.open ? t('hud.hintOpen') : t('hud.hintBuild');
+      const touch = window.matchMedia?.('(pointer: coarse)').matches ?? false;
+      if (w.towers.length === 0)
+        text = w.grid.open ? t('hud.hintOpen') : t(touch ? 'hud.hintBuildTouch' : 'hud.hintBuild');
+      else if (w.towers.length === 1 && touch) text = t('hud.hintZoom');
       else if (w.towers.length < 3) text = t('hud.hintWave');
     }
     if (text === this.lastHint) return;
     this.lastHint = text;
     this.hint.textContent = text;
     this.hint.classList.toggle('hidden', text === '');
+    this.field.classList.toggle('has-hint', text !== '');
   }
 
   private renderIncoming(index: number): void {

@@ -76,10 +76,24 @@ Node 20 ou plus récent est requis.
 | `T` | Changer le mode de ciblage |
 | `R` | Afficher toutes les portées |
 | `A` | Vagues automatiques |
+| Molette | Zoom · glisser pour se déplacer |
 | `Maj` + clic | Construire plusieurs tours d'affilée |
 
-Le jeu est aussi jouable au tactile. Le bouton **Comment jouer** du menu
-résume ces règles dans le jeu, et l'aide contextuelle guide la première partie.
+### Sur téléphone et tablette
+
+Le jeu est pensé pour le tactile autant que pour le clavier :
+
+- Le champ de bataille occupe l'essentiel de l'écran ; les tours se choisissent
+  dans une barre défilante en bas (à droite en paysage).
+- **Toucher une case vise**, un second appui sur **Construire** pose la tour :
+  pas de construction par erreur avec un doigt trop large.
+- **Pincez pour zoomer, glissez pour vous déplacer.** Le jeu s'ouvre déjà zoomé
+  à une taille de case confortable ; le bouton ⤢ revient à la carte entière.
+- Les détails d'une tour s'ouvrent en feuille glissante par-dessus la carte,
+  sans jamais rétrécir le terrain.
+
+Le bouton **Comment jouer** du menu résume les règles, et l'aide contextuelle
+guide la première partie.
 
 ## Contenu
 

@@ -59,10 +59,13 @@ e2e/         Playwright (parcours utilisateur dans Chromium)
 
 ## Rendu (`src/render`)
 
-- `Renderer` gère la caméra (la carte est ajustée dans la zone disponible
-  avec letterbox), le pixel ratio, l'ordre de dessin, la météo, les
+- `Renderer` gère la caméra, le pixel ratio, l'ordre de dessin, la météo, les
   secousses d'écran et, sur les cartes de nuit, une **lightmap** multipliée
   sur la scène.
+- La **caméra** a un zoom (1 = carte entière) et un décalage, tous deux bornés
+  pour qu'aucun vide n'apparaisse sur un côté. `setZoom` garde le point visé
+  sous le doigt ou le curseur ; `zoomForTileSize` et `zoomToCoverHeight`
+  servent à ouvrir les petits écrans à une taille de case jouable.
 - `terrain.ts` dessine une fois le sol, les chemins, l'eau ou la boue, les
   rochers, arbres, ruines, portes et forteresses dans un canvas hors écran,
   réutilisé chaque image.
@@ -82,6 +85,16 @@ e2e/         Playwright (parcours utilisateur dans Chromium)
 - `GameSession` possède une partie en cours : `World`, `Renderer`,
   `GameLoop`, HUD, panneaux latéraux, entrées souris/clavier/tactile,
   sons, sauvegarde automatique.
+- **Entrées** : un seul jeu de gestionnaires `pointer*` couvre souris et
+  tactile. Deux doigts pincent (zoom autour du milieu), un doigt fait défiler
+  la carte quand elle est zoomée. À la souris un clic construit directement ;
+  au doigt un appui ne fait que **viser** et une barre de confirmation
+  apparaît, ce qui évite les poses accidentelles.
+- **Disposition** : la feuille CSS donne la priorité au terrain sur petit
+  écran. Les panneaux deviennent une barre défilante et une feuille glissante
+  posées par-dessus la carte plutôt qu'à côté. Les garde-fous sont testés dans
+  `e2e/mobile.spec.ts` (part de l'écran occupée par la carte, taille des
+  cibles tactiles, absence de défilement horizontal).
 - `i18n.ts` contient les chaînes FR/EN ; les données du jeu portent leurs
   propres textes localisés (`{ fr, en }`) lus via `L()`.
 - `meta/storage.ts` persiste réglages, étoiles, records et partie en cours
