@@ -87,6 +87,19 @@ e2e/         Playwright (parcours utilisateur dans Chromium)
 - `meta/storage.ts` persiste réglages, étoiles, records et partie en cours
   dans `localStorage`, avec repli silencieux si le stockage est indisponible.
 
+## Éditeur de cartes (`src/ui/editor`, `src/ui/screens/editor.ts`)
+
+- `editor/model.ts` est un modèle pur : état immuable, outils (`paint`,
+  `addWaypoint` avec insertion d'angles droits, `resize`, `setOpen`…),
+  `validate` (chemins sur cases constructibles, base atteignable via le champ de
+  flux) et `toMapDef` qui produit une `MapDef` jouable identique aux cartes de
+  la campagne. Tout est testé sans DOM dans `tests/editor.test.ts`.
+- L'écran rend le vrai terrain (`renderTerrain`) à chaque modification, puis
+  superpose la grille, les points de passage et le survol.
+- Les cartes sont stockées dans `localStorage` (`meta/storage.ts`, préfixe
+  `custom-`) et retrouvées par `findMap`, y compris pour reprendre une partie
+  sauvegardée dessus.
+
 ## Ajouter du contenu
 
 **Une tour** : ajouter une ligne dans `src/data/towers.ts` (trois niveaux plus

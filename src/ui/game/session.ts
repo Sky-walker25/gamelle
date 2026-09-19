@@ -21,6 +21,7 @@ export interface SessionCallbacks {
   onGameOver: (won: boolean) => void;
   onAutosave: (world: World) => void;
   openPause: () => void;
+  onAutoWave?: (on: boolean) => void;
 }
 
 const SPEEDS = [1, 2, 3];
@@ -53,6 +54,7 @@ export class GameSession {
   private livesStat: HTMLElement;
   private waveEl: HTMLElement;
   private waveButton: HTMLButtonElement;
+  private autoButton: HTMLButtonElement;
   private countdownEl: HTMLElement;
   private speedButtons: HTMLButtonElement[] = [];
   private buildPanel: BuildPanel;
@@ -105,6 +107,14 @@ export class GameSession {
       this.livesEl,
     );
     this.waveButton = el('button', { class: 'primary', onclick: () => this.callWave() }) as HTMLButtonElement;
+    this.autoButton = el('button', {
+      class: 'toggle',
+      text: t('hud.auto'),
+      title: t('hud.autoTitle'),
+      'aria-pressed': 'false',
+      dataset: { action: 'auto' },
+      onclick: () => this.toggleAuto(),
+    }) as HTMLButtonElement;
     this.countdownEl = el('span', { class: 'countdown' });
     const speed = el('div', { class: 'speed', role: 'group', 'aria-label': t('hud.speed') });
     SPEEDS.forEach((s, i) => {
@@ -119,7 +129,7 @@ export class GameSession {
       this.livesStat,
       el('div', { class: 'stat wave', title: t('hud.wave') }, el('span', { class: 'icon' }), this.waveEl),
       el('div', { class: 'spacer' }),
-      el('div', { class: 'wave-control' }, this.countdownEl, this.waveButton),
+      el('div', { class: 'wave-control' }, this.countdownEl, this.waveButton, this.autoButton),
       speed,
       el('button', {
         text: t('hud.pause'),
@@ -154,6 +164,8 @@ export class GameSession {
     this.bindWorld();
     this.bindInput();
     this.refreshSpeedButtons();
+    this.autoButton.classList.toggle('active', world.autoWave);
+    this.autoButton.setAttribute('aria-pressed', world.autoWave ? 'true' : 'false');
     this.updateHud(true);
   }
 
@@ -446,6 +458,21 @@ export class GameSession {
     if (this.world.callNextWave()) audio.play('click');
   }
 
+  toggleAuto(): void {
+    this.setAuto(!this.world.autoWave);
+    audio.play('click');
+    this.toast(this.world.autoWave ? t('hud.autoOn') : t('hud.autoOff'), 'info');
+  }
+
+  setAuto(on: boolean): void {
+    this.world.autoWave = on;
+    this.autoButton.classList.toggle('active', on);
+    this.autoButton.setAttribute('aria-pressed', on ? 'true' : 'false');
+    this.callbacks.onAutoWave?.(on);
+    // An already running countdown is skipped right away.
+    if (on && this.world.phase === 'countdown') this.world.callNextWave();
+  }
+
   cycleTargetMode(): void {
     const tower = this.world.tower(this.view.selectedTowerId);
     if (!tower) return;
@@ -593,6 +620,10 @@ export class GameSession {
       case 'r':
       case 'R':
         this.view.showAllRanges = !this.view.showAllRanges;
+        break;
+      case 'a':
+      case 'A':
+        this.toggleAuto();
         break;
       default:
         return;

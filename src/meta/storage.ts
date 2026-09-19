@@ -1,11 +1,12 @@
 import { DEFAULT_TOWERS, MAPS, MAP_BY_ID } from '@/data/maps';
 import { DIFFICULTIES } from '@/data/difficulty';
-import type { DifficultyId, Lang } from '@/sim/types';
+import type { DifficultyId, Lang, MapDef } from '@/sim/types';
 import type { WorldSave } from '@/sim/world';
 
 const KEY_SETTINGS = 'gamelle.v1.settings';
 const KEY_PROGRESS = 'gamelle.v1.progress';
 const KEY_SAVE = 'gamelle.v1.save';
+const KEY_CUSTOM_MAPS = 'gamelle.v1.custom-maps';
 
 export interface Settings {
   lang: Lang;
@@ -15,6 +16,8 @@ export interface Settings {
   reducedMotion: boolean;
   damageNumbers: boolean;
   showRanges: boolean;
+  /** Call the next wave automatically once the previous one is cleared. */
+  autoWave: boolean;
 }
 
 export interface MapProgress {
@@ -42,6 +45,7 @@ export const DEFAULT_SETTINGS: Settings = {
   reducedMotion: false,
   damageNumbers: true,
   showRanges: false,
+  autoWave: false,
 };
 
 function read<T>(key: string): T | null {
@@ -92,6 +96,7 @@ export function mapProgress(progress: Progress, mapId: string): MapProgress {
 }
 
 export function isMapUnlocked(progress: Progress, mapId: string): boolean {
+  if (mapId.startsWith(CUSTOM_MAP_PREFIX)) return true;
   const map = MAP_BY_ID[mapId];
   if (!map) return false;
   if (map.order === 1) return true;
@@ -100,6 +105,7 @@ export function isMapUnlocked(progress: Progress, mapId: string): boolean {
 }
 
 export function isEndlessUnlocked(progress: Progress, mapId: string): boolean {
+  if (mapId.startsWith(CUSTOM_MAP_PREFIX)) return true;
   return mapProgress(progress, mapId).stars > 0;
 }
 
@@ -164,8 +170,49 @@ export function addKills(progress: Progress, kills: number): void {
 export function loadGame(): SavedGame | null {
   const stored = read<SavedGame>(KEY_SAVE);
   if (!stored || !stored.save || stored.save.version !== 1) return null;
-  if (!MAP_BY_ID[stored.save.map]) return null;
+  if (!findMap(stored.save.map)) return null;
   return stored;
+}
+
+// ----------------------------------------------------------------------
+// Custom maps (map editor)
+// ----------------------------------------------------------------------
+
+export const CUSTOM_MAP_PREFIX = 'custom-';
+
+/** The editor unlocks once the final campaign map has been won. */
+export function isEditorUnlocked(progress: Progress): boolean {
+  const last = [...MAPS].sort((a, b) => b.order - a.order)[0];
+  return !!last && mapProgress(progress, last.id).stars > 0;
+}
+
+export function isCustomMap(map: MapDef): boolean {
+  return map.id.startsWith(CUSTOM_MAP_PREFIX);
+}
+
+export function loadCustomMaps(): MapDef[] {
+  const stored = read<MapDef[]>(KEY_CUSTOM_MAPS);
+  if (!Array.isArray(stored)) return [];
+  return stored.filter((m) => m && typeof m.id === 'string' && Array.isArray(m.terrain));
+}
+
+export function saveCustomMaps(maps: MapDef[]): void {
+  write(KEY_CUSTOM_MAPS, maps);
+}
+
+export function upsertCustomMap(map: MapDef): void {
+  const maps = loadCustomMaps().filter((m) => m.id !== map.id);
+  maps.push(map);
+  saveCustomMaps(maps);
+}
+
+export function deleteCustomMap(id: string): void {
+  saveCustomMaps(loadCustomMaps().filter((m) => m.id !== id));
+}
+
+/** Looks a map up among the campaign maps and the player's custom maps. */
+export function findMap(id: string): MapDef | undefined {
+  return MAP_BY_ID[id] ?? loadCustomMaps().find((m) => m.id === id);
 }
 
 export function saveGame(save: WorldSave): void {

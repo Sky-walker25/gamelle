@@ -316,3 +316,42 @@ describe('Open map placement with enemies in flight', () => {
     expect(w.canBuild('archers', 9, 3)).toBeNull();
   });
 });
+
+describe('Automatic waves', () => {
+  it('calls the next wave as soon as the previous one is cleared, with the early bonus', () => {
+    const w = makeWorld();
+    w.gold = 3000;
+    for (const [c, r] of [
+      [1, 5],
+      [2, 5],
+      [3, 5],
+      [1, 7],
+      [2, 7],
+      [3, 7],
+      [5, 4],
+      [5, 5],
+    ] as [number, number][]) {
+      const t = w.build(c % 2 === 0 ? 'archers' : 'ballista', c, r)!;
+      w.upgrade(t.id);
+      w.upgrade(t.id);
+    }
+    w.autoWave = true;
+    let cleared = 0;
+    let starts = 0;
+    w.events.on('waveCleared', () => cleared++);
+    w.events.on('waveStart', () => starts++);
+    w.callNextWave();
+    runUntil(w, () => cleared >= 1, 120);
+    expect(cleared).toBe(1);
+    expect(starts).toBe(2);
+    expect(w.phase).toBe('active');
+    expect(w.stats.earlyCalls).toBe(1);
+  });
+
+  it('is kept in the save file', () => {
+    const w = makeWorld();
+    w.autoWave = true;
+    const restored = World.restore(JSON.parse(JSON.stringify(w.serialize())), MAP_BY_ID['thermopylae']!);
+    expect(restored.autoWave).toBe(true);
+  });
+});

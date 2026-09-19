@@ -6,6 +6,10 @@ import { towerLevelDef } from '@/data/towers';
 import {
   addKills,
   clearSavedGame,
+  deleteCustomMap,
+  findMap,
+  isEditorUnlocked,
+  loadCustomMaps,
   loadGame,
   loadProgress,
   loadSettings,
@@ -15,6 +19,7 @@ import {
   saveGame,
   saveSettings,
   unlockedTowers,
+  upsertCustomMap,
 } from '@/meta/storage';
 import type { Progress, Settings } from '@/meta/storage';
 import type { DifficultyId, GameMode, MapDef } from '@/sim/types';
@@ -24,11 +29,13 @@ import { GameSession } from './game/session';
 import { L, detectLang, formatDuration, setLang, t, tk } from './i18n';
 import { confirmModal, showModal } from './modal';
 import { codexScreen } from './screens/codex';
+import { editorScreen } from './screens/editor';
+import { fromMapDef } from './editor/model';
 import { mapsScreen } from './screens/maps';
 import { menuScreen } from './screens/menu';
 import { settingsContent } from './screens/settings';
 
-type ScreenId = 'menu' | 'maps' | 'codex' | 'game';
+type ScreenId = 'menu' | 'maps' | 'codex' | 'game' | 'editor';
 
 export class App {
   settings: Settings;
@@ -80,6 +87,8 @@ export class App {
       onPlay: () => this.showMaps(),
       onCodex: () => this.showCodex(),
       onHowTo: () => this.openHowTo(),
+      onEditor: () => this.showEditor(),
+      editorUnlocked: isEditorUnlocked(this.progress),
       onSettings: () => this.openSettings(),
       onLang: (lang) => {
         this.settings.lang = lang;
@@ -99,10 +108,42 @@ export class App {
         {
           onBack: () => this.showMenu(),
           onStart: (map, difficulty, mode) => this.startGame(map, difficulty, mode),
+          onNewCustom: () => this.showEditor(),
+          onEditCustom: (map) => this.showEditor(map),
+          onDeleteCustom: async (map) => {
+            if (await confirmModal(this.root, t('maps.deleteConfirm'), t('misc.yes'), t('misc.no'))) {
+              deleteCustomMap(map.id);
+              this.showMaps();
+            }
+          },
         },
         initialMap ?? this.lastMapId,
+        loadCustomMaps(),
+        isEditorUnlocked(this.progress),
       ),
     );
+  }
+
+  showEditor(map?: MapDef): void {
+    if (!isEditorUnlocked(this.progress)) return;
+    const editor = editorScreen(map ? fromMapDef(map) : null, {
+      onBack: () => this.showMaps(),
+      onSave: (def) => upsertCustomMap(def),
+      onTest: (def) => this.startGame(def, 'normal', 'classic'),
+      toast: (text) => this.flash(text),
+    });
+    this.setScreen('editor', editor.element);
+  }
+
+  /** Small transient message outside of a game session. */
+  private flash(text: string): void {
+    const node = el('div', {
+      class: 'toast info',
+      text,
+      style: { position: 'fixed', left: '20px', bottom: '20px', zIndex: '60' },
+    });
+    this.root.appendChild(node);
+    window.setTimeout(() => node.remove(), 3500);
   }
 
   showCodex(): void {
@@ -119,6 +160,7 @@ export class App {
   startGame(map: MapDef, difficulty: DifficultyId, mode: GameMode): void {
     const seed = hashSeed(`${map.id}:${difficulty}:${mode}:${Date.now()}`);
     const world = new World({ map, difficulty, mode, seed, unlockedTowers: unlockedTowers(this.progress) });
+    world.autoWave = this.settings.autoWave;
     clearSavedGame();
     this.runSession(world);
   }
@@ -129,7 +171,7 @@ export class App {
       this.showMenu();
       return;
     }
-    const map = MAP_BY_ID[saved.save.map];
+    const map = findMap(saved.save.map);
     if (!map) {
       clearSavedGame();
       this.showMenu();
@@ -154,6 +196,10 @@ export class App {
       onGameOver: (won) => this.gameOver(won),
       onAutosave: (w) => saveGame(w.serialize()),
       openPause: () => this.openPause(),
+      onAutoWave: (on) => {
+        this.settings.autoWave = on;
+        saveSettings(this.settings);
+      },
     });
     this.setScreen('game', session.element);
     this.session = session;
@@ -216,6 +262,7 @@ export class App {
         el('div', { text: t('keys.pause') }),
         el('div', { text: t('keys.speed') }),
         el('div', { text: t('keys.upgrade') }),
+        el('div', { text: t('keys.auto') }),
         el('div', { text: t('keys.cancel') }),
       ),
     );

@@ -13,6 +13,8 @@ export interface MenuCallbacks {
   onPlay: () => void;
   onCodex: () => void;
   onHowTo: () => void;
+  onEditor: () => void;
+  editorUnlocked: boolean;
   onSettings: () => void;
   onLang: (lang: Lang) => void;
 }
@@ -96,6 +98,15 @@ export function menuScreen(progress: Progress, saved: SavedGame | null, cb: Menu
   );
   buttons.appendChild(
     el('button', { text: t('menu.codex'), onclick: cb.onCodex, dataset: { action: 'codex' } }),
+  );
+  buttons.appendChild(
+    el('button', {
+      text: t('menu.editor'),
+      disabled: !cb.editorUnlocked,
+      title: cb.editorUnlocked ? '' : t('menu.editorLocked'),
+      onclick: cb.onEditor,
+      dataset: { action: 'editor' },
+    }),
   );
   buttons.appendChild(
     el('button', { text: t('menu.settings'), onclick: cb.onSettings, dataset: { action: 'settings' } }),

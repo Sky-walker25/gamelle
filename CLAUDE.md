@@ -19,6 +19,10 @@ ni asset externe. Lire `docs/ARCHITECTURE.md` avant de toucher au moteur.
 - Ajouter un ennemi impose une valeur dans `THREAT` (`src/sim/waves.ts`) ; ajouter
   une carte impose que le bot de `tests/balance.test.ts` la gagne en facile et en normal.
 - Les chaînes d'interface passent par `t()` (`src/ui/i18n.ts`), jamais en dur.
+- L'éditeur de cartes garde sa logique dans `src/ui/editor/model.ts` (pur, testé) ;
+  l'écran `src/ui/screens/editor.ts` ne fait que du rendu et des événements.
+- `release/gamelle-defense.html` est généré par `npm run build:single` : le
+  régénérer à chaque livraison.
 - Pas de `console.log` dans `src` (ESLint) ; `console.warn`/`error` tolérés.
 
 ## Vérification visuelle

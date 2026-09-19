@@ -111,7 +111,7 @@ export function enemyIcon(defId: string, size = 64): HTMLCanvasElement {
 
 /** Small preview of a map, rendered from its real terrain. */
 export function mapPreview(map: MapDef, width = 260): HTMLCanvasElement {
-  const key = `map:${map.id}:${width}`;
+  const key = `map:${map.id}:${map.seed}:${map.theme}:${map.cols}x${map.rows}:${map.terrain.join('|')}:${JSON.stringify(map.paths)}:${width}`;
   const cached = cache.get(key);
   if (cached) return copyCanvas(cached);
   const grid = new Grid(map);

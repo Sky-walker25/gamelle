@@ -416,6 +416,16 @@ input:focus-visible {
 .wave-control button.primary {
   min-width: 170px;
 }
+button.toggle {
+  border-color: var(--border-strong);
+  color: var(--text-dim);
+}
+button.toggle.active {
+  background: rgba(111, 195, 255, 0.18);
+  border-color: var(--info);
+  color: #cfe9ff;
+  font-weight: 700;
+}
 .speed {
   display: inline-flex;
   border: 1px solid var(--border-strong);
@@ -990,6 +1000,292 @@ input:focus-visible {
 }
 .codex-card .badge.locked {
   color: #ffb3ad;
+}
+
+.codex-list.table-mode {
+  display: block;
+}
+.table-wrap {
+  overflow-x: auto;
+  padding-bottom: 8px;
+}
+.table-wrap .intro {
+  margin: 0 0 10px;
+}
+.spec-table {
+  border-collapse: separate;
+  border-spacing: 0;
+  table-layout: fixed;
+  min-width: 960px;
+  width: 100%;
+  font-size: 12px;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+.spec-table th,
+.spec-table td {
+  vertical-align: top;
+  text-align: left;
+  padding: 10px;
+  border-bottom: 1px solid var(--border);
+  border-right: 1px solid var(--border);
+}
+.spec-table thead th {
+  position: sticky;
+  top: 0;
+  background: var(--panel-2);
+  color: var(--accent);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 11px;
+  z-index: 1;
+}
+.spec-table tbody th {
+  position: sticky;
+  left: 0;
+  background: var(--panel-2);
+  width: 140px;
+  z-index: 1;
+}
+.spec-table thead th:first-child {
+  width: 140px;
+}
+.spec-table tbody th canvas {
+  width: 40px;
+  height: 40px;
+  display: block;
+  margin-bottom: 4px;
+}
+.spec-table .tname {
+  font-family: var(--font-title);
+  font-size: 16px;
+  font-weight: 400;
+}
+.spec-table .trole {
+  color: var(--text-dim);
+  font-weight: 400;
+  font-size: 11px;
+}
+.spec-table td .lname {
+  font-weight: 700;
+  color: var(--text);
+}
+.spec-table td .year {
+  color: var(--text-faint);
+  font-size: 11px;
+  margin-bottom: 6px;
+}
+.spec-table .specs {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.spec-table .spec {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+}
+.spec-table .spec .k {
+  color: var(--text-dim);
+}
+.spec-table .spec .v {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+.spec-table tbody tr:nth-child(even) td {
+  background: rgba(255, 255, 255, 0.015);
+}
+
+/* ------------------------------------------------------------------ */
+/* Map editor                                                          */
+/* ------------------------------------------------------------------ */
+.editor {
+  background: var(--bg);
+  padding: 16px 20px;
+  gap: 12px;
+}
+.editor .screen-header {
+  flex-wrap: wrap;
+}
+.editor-body {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 1fr 340px;
+  gap: 14px;
+  min-height: 0;
+}
+.editor-canvas-wrap {
+  background: #0d1016;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 0;
+  overflow: hidden;
+}
+.editor-canvas {
+  display: block;
+  cursor: crosshair;
+  touch-action: none;
+  border-radius: 4px;
+}
+.editor-panel {
+  overflow: auto;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  font-size: 13px;
+}
+.editor-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.editor-field .label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-faint);
+}
+.editor-field input[type='text'],
+.editor-field input[type='number'],
+.editor-field select,
+.editor-field textarea {
+  font: inherit;
+  color: var(--text);
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--border-strong);
+  border-radius: 6px;
+  padding: 6px 8px;
+}
+.editor-field input[type='number'] {
+  width: 72px;
+}
+.editor-field .row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+}
+.editor-field .unit {
+  color: var(--text-dim);
+  font-size: 12px;
+}
+.editor .hint {
+  margin: 0;
+  color: var(--text-dim);
+  font-size: 12px;
+  line-height: 1.4;
+}
+.tool-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+}
+.tool-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  font-size: 12px;
+  text-align: left;
+}
+.tool-btn.active {
+  border-color: var(--accent);
+  color: var(--accent-2);
+}
+.tool-btn .swatch {
+  width: 14px;
+  height: 14px;
+  border-radius: 3px;
+  border: 1px solid rgba(0, 0, 0, 0.4);
+  flex: none;
+}
+.path-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.path-chip {
+  padding: 4px 8px;
+  font-size: 12px;
+  border-width: 2px;
+}
+.path-chip.active {
+  background: rgba(255, 255, 255, 0.1);
+}
+.roster-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px 10px;
+}
+.roster-row {
+  display: grid;
+  grid-template-columns: auto 1fr 56px;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+}
+.roster-row input[type='number'] {
+  width: 56px;
+  padding: 3px 4px;
+}
+.editor-errors {
+  background: rgba(217, 70, 59, 0.12);
+  border: 1px solid rgba(217, 70, 59, 0.5);
+  border-radius: 8px;
+  padding: 8px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.editor-errors .label {
+  color: #ffb3ad;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+.editor-errors .err {
+  color: #ffd6d2;
+  font-size: 12px;
+}
+.map-section {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 8px;
+}
+.map-section h3 {
+  margin: 0;
+  font-family: var(--font-title);
+  font-size: 20px;
+  color: var(--accent-2);
+  flex: 1;
+}
+.map-card .card-actions {
+  display: flex;
+  gap: 6px;
+  padding: 0 12px 12px;
+}
+.map-card .card-actions button {
+  padding: 4px 10px;
+  font-size: 12px;
+}
+.map-card.custom {
+  cursor: pointer;
+}
+@media (max-width: 900px) {
+  .editor-body {
+    grid-template-columns: 1fr;
+    grid-template-rows: minmax(220px, 45vh) 1fr;
+  }
 }
 
 /* ------------------------------------------------------------------ */

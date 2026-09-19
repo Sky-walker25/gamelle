@@ -50,12 +50,17 @@ Node 20 ou plus récent est requis.
   moitié portée, sauf à proximité d'un poste radar.
 - Une **campagne** compte 30 vagues avec un boss toutes les dix. Vous pouvez
   appeler la vague suivante en avance pour un bonus d'or, et même lancer
-  plusieurs vagues en même temps.
+  plusieurs vagues en même temps. Le bouton **Auto** (touche `A`) enchaîne les
+  vagues dès que la précédente est repoussée, en conservant le bonus.
 - Gagner une carte débloque la suivante et de nouvelles tours ; la difficulté
   donne 1, 2 ou 3 étoiles. Le **mode infini** se débloque sur chaque carte
   gagnée.
 - **Verdun** est un terrain ouvert : il n'y a pas de chemin tracé, vos tours
   forment le labyrinthe. Il est interdit de fermer complètement le passage.
+- Gagner la dernière carte débloque l'**éditeur de cartes** : taille libre
+  (8×6 à 40×24), terrain peint à la souris, chemins par points de passage ou
+  terrain ouvert, ambiance, économie, roster d'ennemis, export/import JSON. Les
+  cartes créées se jouent dans tous les modes depuis l'écran des champs de bataille.
 
 ### Raccourcis clavier
 
@@ -70,6 +75,7 @@ Node 20 ou plus récent est requis.
 | `S` | Vendre la tour sélectionnée |
 | `T` | Changer le mode de ciblage |
 | `R` | Afficher toutes les portées |
+| `A` | Vagues automatiques |
 | `Maj` + clic | Construire plusieurs tours d'affilée |
 
 Le jeu est aussi jouable au tactile. Le bouton **Comment jouer** du menu
@@ -92,7 +98,8 @@ d'Hannibal), le Zeppelin L 30 et le char Mark IV.
 Hastings (1066), Azincourt (1415), Verdun (1916), Stalingrad (1942).
 
 L'encyclopédie intégrée donne pour chaque élément sa date, son origine et une
-note historique. L'interface est en français, avec une traduction anglaise.
+note historique, plus un tableau comparatif des tours (une ligne par tour, une
+colonne par niveau, les caractéristiques dans les cases). L'interface est en français, avec une traduction anglaise.
 
 ## Développement
 

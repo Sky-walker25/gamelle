@@ -224,3 +224,118 @@ test.describe('Gamelle Defense', () => {
     await expect(page.locator('.speed button').nth(1)).toHaveClass(/active/);
   });
 });
+
+test.describe('Automatic waves, comparison table and map editor', () => {
+  test('the Auto toggle chains waves without clicking', async ({ page }) => {
+    await startFirstMap(page);
+    await page.evaluate(() => {
+      const s = (window as unknown as { __gamelle: Hook }).__gamelle.app.session!;
+      s.world.gold = 5000;
+      for (const [c, r] of [
+        [1, 5],
+        [2, 5],
+        [3, 5],
+        [1, 7],
+        [2, 7],
+        [3, 7],
+        [5, 4],
+        [5, 5],
+        [8, 4],
+        [8, 7],
+      ] as [number, number][]) {
+        const t = s.world.build(c % 2 ? 'ballista' : 'archers', c, r);
+        if (t) {
+          s.world.upgrade(t.id, 0);
+          s.world.upgrade(t.id, 0);
+        }
+      }
+      s.setSpeed(2);
+    });
+    await page.locator('button[data-action="auto"]').click();
+    await expect(page.locator('button[data-action="auto"]')).toHaveClass(/active/);
+    await page.getByRole('button', { name: /Lancer la vague/ }).click();
+    await expect(page.locator('.stat.wave .value')).toHaveText('Vague 2 / 30', { timeout: 90_000 });
+    // Reload keeps the preference for the next game.
+    await page.getByRole('button', { name: 'Pause' }).click();
+    await page.locator('button[data-action="quit"]').click();
+    await page.locator('button[data-action="continue"]').click();
+    await expect(page.locator('button[data-action="auto"]')).toHaveClass(/active/);
+  });
+
+  test('the encyclopedia has a comparison table with one row per tower', async ({ page }) => {
+    await page.goto('/');
+    await page.getByRole('button', { name: /Encyclopédie/ }).click();
+    await page.locator('button[data-tab="table"]').click();
+    await expect(page.locator('.spec-table tbody tr')).toHaveCount(9);
+    await expect(page.locator('.spec-table thead th')).toHaveCount(6);
+    await expect(page.locator('.spec-table tbody tr').first()).toContainText('Mitrailleuse Gatling');
+  });
+
+  test('the map editor unlocks after the last map and produces a playable map', async ({ page }) => {
+    await page.goto('/');
+    // Locked at first.
+    await expect(page.locator('button[data-action="editor"]')).toBeDisabled();
+    await page.evaluate(() => {
+      localStorage.setItem(
+        'gamelle.v1.progress',
+        JSON.stringify({
+          maps: { stalingrad: { stars: 1, wins: { easy: true }, bestWave: 0 } },
+          totalKills: 0,
+          totalWins: 1,
+        }),
+      );
+    });
+    await page.reload();
+    await page.locator('button[data-action="editor"]').click();
+    await expect(page.locator('.editor h2')).toHaveText('Éditeur de cartes');
+    // Shrink the map, name it, draw a path from the left edge to the right edge.
+    await page.fill('#editor-name', 'Col du test');
+    await page.fill('#editor-cols', '12');
+    await page.locator('#editor-cols').dispatchEvent('change');
+    await page.fill('#editor-rows', '8');
+    await page.locator('#editor-rows').dispatchEvent('change');
+    const canvas = page.locator('.editor-canvas');
+    await expect(canvas).toHaveAttribute('data-cols', '12');
+    const box = (await canvas.boundingBox())!;
+    const tile = box.width / 12;
+    const click = async (c: number, r: number) =>
+      page.mouse.click(box.x + (c + 0.5) * tile, box.y + (r + 0.5) * tile);
+    await page.locator('button[data-tool="path"]').click();
+    await click(0, 3);
+    await click(5, 3);
+    await click(5, 6); // corner
+    await click(11, 6);
+    await page.locator('button[data-tool="#"]').click();
+    await click(2, 1);
+    await expect(page.locator('.editor-errors')).toBeHidden();
+    await page.locator('button[data-action="save"]').click();
+    await page.locator('button[data-action="back"]').click();
+    const card = page.locator('.map-card.custom');
+    await expect(card).toHaveCount(1);
+    await expect(card).toContainText('Col du test');
+    await card.click();
+    await page.locator('button[data-action="start"]').click();
+    await expect(page.locator('.field canvas')).toBeVisible();
+    const cols = await page.evaluate(
+      () =>
+        (
+          window as unknown as {
+            __gamelle: { app: { session: { world: { def: { cols: number; rows: number } } } } };
+          }
+        ).__gamelle.app.session.world.def.cols,
+    );
+    expect(cols).toBe(12);
+    await page.evaluate(() =>
+      (window as unknown as { __gamelle: Hook }).__gamelle.app.session!.world.callNextWave(),
+    );
+    await expect
+      .poll(
+        () =>
+          page.evaluate(
+            () => (window as unknown as { __gamelle: Hook }).__gamelle.app.session!.world.enemies.length,
+          ),
+        { timeout: 15_000 },
+      )
+      .toBeGreaterThan(0);
+  });
+});

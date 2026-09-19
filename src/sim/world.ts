@@ -114,6 +114,8 @@ export class World {
   countdown = 0;
   /** Number of waves started so far. */
   waveIndex = 0;
+  /** When set, the next wave is called as soon as the previous one is cleared (keeping the early-call bonus). */
+  autoWave = false;
 
   enemies: Enemy[] = [];
   towers: Tower[] = [];
@@ -273,6 +275,7 @@ export class World {
       if (this.hasMoreWaves) {
         this.phase = 'countdown';
         this.countdown = WAVE_COUNTDOWN;
+        if (this.autoWave) this.callNextWave();
       } else {
         this.phase = 'won';
         this.events.emit('gameOver', { won: true });
@@ -1261,6 +1264,7 @@ export class World {
       phase: this.phase,
       countdown: this.countdown,
       waveIndex: this.waveIndex,
+      autoWave: this.autoWave,
       nextId: this.nextId,
       stats: { ...this.stats },
       spawnQueue: this.spawnQueue.map((s) => ({ ...s })),
@@ -1291,6 +1295,7 @@ export class World {
     world.phase = save.phase;
     world.countdown = save.countdown;
     world.waveIndex = save.waveIndex;
+    world.autoWave = save.autoWave === true;
     world.nextId = save.nextId;
     world.stats = { ...save.stats };
     world.spawnQueue = save.spawnQueue.map((s) => ({ ...s }));
@@ -1332,6 +1337,7 @@ export interface WorldSave {
   phase: WavePhase;
   countdown: number;
   waveIndex: number;
+  autoWave?: boolean;
   nextId: number;
   stats: WorldStats;
   spawnQueue: SpawnEntry[];
