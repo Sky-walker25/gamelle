@@ -59,8 +59,9 @@ Node 20 ou plus récent est requis.
   forment le labyrinthe. Il est interdit de fermer complètement le passage.
 - Gagner la dernière carte débloque l'**éditeur de cartes** : taille libre
   (8×6 à 40×24), terrain peint à la souris, chemins par points de passage ou
-  terrain ouvert, ambiance, économie, roster d'ennemis, export/import JSON. Les
-  cartes créées se jouent dans tous les modes depuis l'écran des champs de bataille.
+  terrain ouvert, ambiance, économie (or de départ sans plafond), roster
+  d'ennemis, export/import JSON. Les cartes créées se jouent dans tous les
+  modes depuis l'écran des champs de bataille.
 
 ### Raccourcis clavier
 

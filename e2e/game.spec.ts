@@ -360,6 +360,11 @@ test.describe('Automatic waves, comparison table and map editor', () => {
     await page.locator('button[data-tool="#"]').click();
     await click(2, 1);
     await expect(page.locator('.editor-errors')).toBeHidden();
+    // Starting gold is unbounded in the editor.
+    await expect(page.locator('#editor-gold')).not.toHaveAttribute('max', /.*/);
+    await page.fill('#editor-gold', '12345678');
+    await page.locator('#editor-gold').dispatchEvent('change');
+    await expect(page.locator('#editor-gold')).toHaveValue('12345678');
     await page.locator('button[data-action="save"]').click();
     await page.locator('button[data-action="back"]').click();
     const card = page.locator('.map-card.custom');

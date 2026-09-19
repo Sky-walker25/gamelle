@@ -295,6 +295,7 @@ export function editorScreen(
     return el('label', { class: 'editor-field' }, el('span', { class: 'label', text: label }), control);
   }
 
+  /** `max` may be Infinity, in which case the field is left unbounded. */
   function numberInput(
     value: number,
     min: number,
@@ -303,16 +304,21 @@ export function editorScreen(
     onChange: (v: number) => void,
     id: string,
   ): HTMLInputElement {
+    const bounded = Number.isFinite(max);
     return el('input', {
       type: 'number',
       id,
       value: String(value),
       min: String(min),
-      max: String(max),
+      max: bounded ? String(max) : false,
       step: String(step),
       onchange: (e: Event) => {
-        const v = Number((e.target as HTMLInputElement).value);
-        if (Number.isFinite(v)) onChange(Math.max(min, Math.min(max, v)));
+        const raw = Number((e.target as HTMLInputElement).value);
+        if (!Number.isFinite(raw)) return;
+        const clamped = Math.max(min, bounded ? Math.min(max, raw) : raw);
+        onChange(clamped);
+        // Reflect the clamp back into the field so it never shows a refused value.
+        (e.target as HTMLInputElement).value = String(Math.round(clamped));
       },
     }) as HTMLInputElement;
   }
@@ -508,10 +514,11 @@ export function editorScreen(
         el(
           'div',
           { class: 'row' },
+          // Starting gold is deliberately unbounded: the editor is a sandbox.
           numberInput(
             state.startGold,
-            50,
-            5000,
+            0,
+            Number.POSITIVE_INFINITY,
             10,
             (v) => update({ ...state, startGold: v }),
             'editor-gold',

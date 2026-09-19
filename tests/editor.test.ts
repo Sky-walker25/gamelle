@@ -120,6 +120,17 @@ describe('map editor model', () => {
     expect(parseImportedMap('{"cols":3,"rows":1,"terrain":["...."]}')).toBeNull();
   });
 
+  it('keeps an arbitrarily large starting gold through export and import', () => {
+    const huge = 987_654_321;
+    const state = { ...newEditorState(), name: 'Bac à sable', startGold: huge };
+    const map = toMapDef(state);
+    expect(map.startGold).toBe(huge);
+    const imported = parseImportedMap(JSON.stringify(map));
+    expect(imported?.startGold).toBe(huge);
+    // A map with no starting gold at all is a legitimate challenge, not an error.
+    expect(toMapDef({ ...state, startGold: 0 }).startGold).toBe(0);
+  });
+
   it('feeds the wave generator with the custom roster', () => {
     let s = { ...newEditorState(), name: 'Roster' };
     s = toggleRoster(s, 'tank', 2);

@@ -109,6 +109,9 @@ e2e/         Playwright (parcours utilisateur dans Chromium)
   la campagne. Tout est testé sans DOM dans `tests/editor.test.ts`.
 - L'écran rend le vrai terrain (`renderTerrain`) à chaque modification, puis
   superpose la grille, les points de passage et le survol.
+- L'or de départ n'a volontairement pas de plafond : l'éditeur est un bac à
+  sable. Les vies (1 à 200) et les vagues (5 à 100) restent bornées parce que
+  le générateur de vagues et l'affichage s'appuient dessus.
 - Les cartes sont stockées dans `localStorage` (`meta/storage.ts`, préfixe
   `custom-`) et retrouvées par `findMap`, y compris pour reprendre une partie
   sauvegardée dessus.
